@@ -53,12 +53,15 @@ html, body { height: 100%; }
 body { font-family: 'DM Sans', sans-serif; background: var(--gray-50); color: var(--gray-800); font-size: 14px; line-height: 1.5; }
 
 /* SIDEBAR */
-.sidebar { position: fixed; left: 0; top: 0; bottom: 0; width: 220px; background: var(--green-dark); display: flex; flex-direction: column; z-index: 100; }
+.sidebar { position: fixed; left: 0; top: 0; bottom: 0; width: 220px; background: var(--green-dark); display: flex; flex-direction: column; z-index: 100; overflow: hidden; }
 .sidebar-logo { padding: 20px 18px 16px; border-bottom: 1px solid rgba(255,255,255,0.08); }
 .sidebar-logo .brand { font-size: 17px; font-weight: 600; color: #fff; letter-spacing: -0.3px; }
 .sidebar-logo .sub { font-size: 11px; color: rgba(255,255,255,0.5); margin-top: 1px; }
 .sidebar-logo .dot { color: var(--green-mid); }
-.nav-section { padding: 12px 0; flex: 1; }
+.nav-section { padding: 12px 0; flex: 1; min-height: 0; overflow-y: auto; scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.25) transparent; }
+.nav-section::-webkit-scrollbar { width: 6px; }
+.nav-section::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 3px; }
+.nav-section::-webkit-scrollbar-track { background: transparent; }
 .nav-label { font-size: 10px; font-weight: 600; color: rgba(255,255,255,0.3); letter-spacing: 1px; padding: 0 18px; margin-bottom: 4px; text-transform: uppercase; }
 .nav-item { display: flex; align-items: center; gap: 10px; padding: 9px 18px; color: rgba(255,255,255,0.65); cursor: pointer; font-size: 13.5px; transition: all 0.15s; border-left: 3px solid transparent; }
 .nav-item:hover { background: rgba(255,255,255,0.06); color: #fff; }
@@ -658,13 +661,18 @@ select.field-input { cursor: pointer; }
 #smart-af-box .af-item:last-child{border-bottom:none;}
 #smart-af-box .af-item:hover,#smart-af-box .af-item.active{background:#e8f5e9;color:#1b5e20;}
 #smart-af-box .af-item b{color:#2e7d32;font-weight:700;}
-</style><script type="module">
-import { createClient } from 'https://esm.sh/@supabase/supabase-js';
-
-window.supabase = createClient(
-  'https://zvpyxobomfwgwckoikry.supabase.co',
-  'sb_publishable_Wmwt0y4638KQ9oQRbNHqWA_RQuI164L'
-);
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script>
+try{
+  window.supabase = window.supabase.createClient(
+    'https://zvpyxobomfwgwckoikry.supabase.co',
+    'sb_publishable_Wmwt0y4638KQ9oQRbNHqWA_RQuI164L'
+  );
+}catch(e){
+  console.warn('Supabase init failed (offline ya file directly kholeko), cloud sync nahuni tara app chalcha:',e);
+  window.supabase = null;
+}
 </script>
 </head>
 <body>
