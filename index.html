@@ -765,7 +765,7 @@ try{
     <div class="nav-label" style="margin-top:16px">Accounts</div>
     <div class="nav-item" onclick="showPage('payable-ledger',this)" data-page="payable-ledger">
       <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-      Payable Ledger
+      Receivable Ledger
     </div>
     <div class="nav-label" style="margin-top:16px">Reports</div>
     <div class="nav-item" onclick="showPage('dashboard',this)" data-page="dashboard">
@@ -900,13 +900,13 @@ try{
       </div>
     </div>
 
-    <!-- ══ PAYABLE LEDGER PAGE (Customer Baaki / Credit Tracker) ══ -->
+    <!-- ══ RECEIVABLE LEDGER PAGE (Customer Baaki / Credit Tracker) ══ -->
     <div class="page-section" id="page-payable-ledger">
       <div id="pay-metrics" class="metrics-grid" style="margin-bottom:18px"></div>
       <div id="pay-alerts-container"></div>
       <div class="table-card">
         <div class="table-header">
-          <span class="table-title">🧾 Payable Ledger — Customer Baaki (Credit Tracker)</span>
+          <span class="table-title">🧾 Receivable Ledger — Customer Baaki (Credit Tracker)</span>
           <div class="table-controls" style="gap:8px;flex-wrap:wrap">
             <div class="search-box">
               <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
@@ -1632,7 +1632,7 @@ try{
       </div>
     </div>
 
-    <!-- ══ PAYABLE LEDGER — ADD/EDIT ENTRY MODAL ══ -->
+    <!-- ══ RECEIVABLE LEDGER — ADD/EDIT ENTRY MODAL ══ -->
     <div class="overlay" id="modal-payable">
       <div class="modal" style="max-width:640px">
         <div class="modal-head">
@@ -1671,7 +1671,7 @@ try{
       </div>
     </div>
 
-    <!-- ══ PAYABLE LEDGER — MANAGE (PAYMENTS / PDC / FOLLOW-UP) MODAL ══ -->
+    <!-- ══ RECEIVABLE LEDGER — MANAGE (PAYMENTS / PDC / FOLLOW-UP) MODAL ══ -->
     <div class="overlay" id="modal-payable-manage">
       <div class="modal" style="max-width:720px">
         <div class="modal-head">
@@ -2818,7 +2818,7 @@ async function dbSet(k,v) {
 //  ☁️ SUPABASE CLOUD SYNC (automatic, cross-device)
 // ══════════════════════════════════════════════
 const SYNC_TABLE='dah_sync';
-const SYNC_KEYS=['dah2-stock','dah2-sales','dah2-bookings','dah2-receipts','dah2-vouchers','dah2-valuation-sheets','dah2-purchases'];
+const SYNC_KEYS=['dah2-stock','dah2-sales','dah2-bookings','dah2-receipts','dah2-vouchers','dah2-valuation-sheets','dah2-purchases','dah2-payable-ledger'];
 let cloudPushTimer=null;
 const cloudPushQueue={};
 
@@ -2893,6 +2893,8 @@ async function manualSyncNow(){
     if(typeof loadPurchases==='function')loadPurchases();
     populateModelSelects();render();renderReceiptLedger();renderVoucherLedger();
     if(typeof renderValuationLedger==='function')renderValuationLedger();
+    if(typeof loadPayables==='function')loadPayables();
+    if(typeof renderPayableLedger==='function'){renderPayableLedger();renderPayableMetrics();renderPayableAlerts();}
     toast('✅ Sync complete');
   }else{
     toast('⚠️ Sync failed, internet check garnus');
@@ -8020,7 +8022,7 @@ setTimeout(()=>{
 // ══ END ENTER-KEY AUTO-ADVANCE ══
 
 // ══════════════════════════════════════════════════════════════
-// ██████  PAYABLE LEDGER MODULE (Customer Baaki / Credit Tracker)  ██████
+// ██████  RECEIVABLE LEDGER MODULE (Customer Baaki / Credit Tracker)  ██████
 // ══════════════════════════════════════════════════════════════
 
 let payables = [];
@@ -8528,8 +8530,8 @@ function exportPayableXLSX(){
   });
   const ws=XLSX.utils.aoa_to_sheet([header,...rows]);
   const wb=XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb,ws,'Payable Ledger');
-  XLSX.writeFile(wb,'Payable_Ledger_'+today()+'.xlsx');
+  XLSX.utils.book_append_sheet(wb,ws,'Receivable Ledger');
+  XLSX.writeFile(wb,'Receivable_Ledger_'+today()+'.xlsx');
   toast('Excel exported ✓');
 }
 
@@ -8542,8 +8544,8 @@ if(_origShowPagePay){
       renderPayableLedger();
       renderPayableMetrics();
       renderPayableAlerts();
-      const titleEl=document.getElementById('page-title'); if(titleEl) titleEl.textContent='Payable Ledger';
-      const mobTitle=document.getElementById('mob-page-title'); if(mobTitle) mobTitle.textContent='Payable Ledger';
+      const titleEl=document.getElementById('page-title'); if(titleEl) titleEl.textContent='Receivable Ledger';
+      const mobTitle=document.getElementById('mob-page-title'); if(mobTitle) mobTitle.textContent='Receivable Ledger';
       const addBtn=document.getElementById('add-btn');
       const mobAddBtn=document.getElementById('mob-add-btn');
       if(addBtn){ addBtn.innerHTML='<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg> Add Credit Entry'; addBtn.onclick=()=>openPayableModal(); addBtn.style.display=''; }
