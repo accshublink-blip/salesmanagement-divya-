@@ -177,6 +177,24 @@ tr:hover td { background: var(--gray-50); }
 .np-cal-panel-title{ font-family:'Noto Sans Devanagari',sans-serif; font-weight:700; font-size:16px; color:#123057; margin-bottom:6px; }
 .np-cal-panel-empty{ color:var(--gray-400); font-size:13px; }
 .np-event-row{ font-size:13px; margin:5px 0; display:flex; gap:8px; align-items:center; color:var(--gray-700); }
+/* Working Notes / Reminders / Month Remarks */
+.np-note-marker{ position:absolute; top:6px; left:8px; font-size:12px; line-height:1; filter:drop-shadow(0 1px 1px rgba(0,0,0,0.15)); }
+.np-cell.has-note{ box-shadow:inset 0 0 0 1px rgba(59,130,246,0.35); }
+.np-note-editor{ margin-top:14px; padding-top:12px; border-top:1px dashed var(--gray-200); }
+.np-note-editor-title{ font-weight:700; font-size:13px; color:var(--gray-700); margin-bottom:6px; }
+.np-note-editor textarea{ width:100%; min-height:60px; resize:vertical; border:1px solid var(--gray-200); border-radius:8px; padding:8px 10px; font-family:inherit; font-size:13px; box-sizing:border-box; }
+.np-note-reminder-toggle{ display:flex; align-items:center; gap:6px; font-size:12.5px; color:var(--gray-600); margin-top:8px; cursor:pointer; user-select:none; }
+.np-note-editor-actions{ display:flex; align-items:center; gap:8px; margin-top:10px; }
+.np-remarks-saved-tag{ font-size:12px; color:#16a34a; font-weight:600; }
+.np-reminders-strip{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-bottom:14px; }
+.np-reminders-label{ font-size:12.5px; font-weight:700; color:var(--gray-600); }
+.np-reminder-chip{ background:#fff7ed; border:1px solid #fed7aa; color:#9a3412; font-size:12px; padding:5px 10px; border-radius:20px; cursor:pointer; display:flex; align-items:center; gap:6px; transition:background .12s; }
+.np-reminder-chip:hover{ background:#ffedd5; }
+.np-reminder-when{ color:#c2410c; font-weight:600; }
+.np-cal-remarks{ background:#fff; border:1px solid var(--gray-200); border-left:4px solid #ffc454; border-radius:var(--radius-lg); padding:16px 20px; box-shadow:var(--shadow); margin-top:16px; }
+.np-cal-remarks-title{ font-family:'Noto Sans Devanagari',sans-serif; font-weight:700; font-size:14px; color:#123057; margin-bottom:8px; }
+.np-cal-remarks textarea{ width:100%; min-height:70px; resize:vertical; border:1px solid var(--gray-200); border-radius:8px; padding:8px 10px; font-family:inherit; font-size:13px; box-sizing:border-box; }
+.np-cal-remarks-actions{ display:flex; align-items:center; gap:8px; margin-top:8px; }
 .group-chevron { display: inline-block; transition: transform 0.2s; margin-right: 6px; color: var(--gray-400); font-size: 11px; }
 .group-chevron.open { transform: rotate(90deg); }
 .bike-row td { background: var(--white); }
@@ -2310,9 +2328,20 @@ try{
         <span><span class="np-dot" style="background:var(--blue)"></span> बिबाह लगन</span>
         <span><span class="np-dot" style="background:var(--accent)"></span> चाड / पर्व</span>
         <span><span class="np-dot" style="background:var(--amber-light)"></span> आज</span>
+        <span>📝 Working Note</span>
+        <span>🔔 Reminder</span>
       </div>
+      <div class="np-reminders-strip" id="np-reminders-strip"></div>
       <div class="np-cal-panel" id="np-detail-panel">
         <div class="np-cal-panel-empty">कुनै मिति छान्नुहोस् विवरण हेर्न।</div>
+      </div>
+      <div class="np-cal-remarks">
+        <div class="np-cal-remarks-title">📝 <span id="np-remarks-month-label"></span> महिनाको Remarks</div>
+        <textarea id="np-month-remarks-input" placeholder="यस महिनाको बारेमा सम्पूर्ण टिप्पणी/remarks लेख्नुहोस्..."></textarea>
+        <div class="np-cal-remarks-actions">
+          <button class="btn btn-primary btn-sm" onclick="saveNpMonthRemarks()">💾 Save Remarks</button>
+          <span id="np-remarks-saved-tag" class="np-remarks-saved-tag"></span>
+        </div>
       </div>
     </div>
 
@@ -8751,6 +8780,18 @@ setTimeout(()=>{
   function addEvent(mIdx, day, type, label){ const key=mIdx+'-'+day; if(!npEvents[key]) npEvents[key]=[]; npEvents[key].push({type,label}); }
   function addRange(mIdx, s, e, type, label){ for(let d=s; d<=e; d++) addEvent(mIdx,d,type,label); }
 
+  // ── User Working Notes / Reminders (per day) & Month Remarks ──
+  const CAL_NOTES_KEY = 'dah2-cal-notes';
+  const MONTH_REMARKS_KEY = 'dah2-cal-month-remarks';
+  function escapeHtml(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  function loadCalNotes(){ try{ return JSON.parse(localStorage.getItem(CAL_NOTES_KEY)) || {}; }catch(e){ return {}; } }
+  function saveCalNotesData(obj){ localStorage.setItem(CAL_NOTES_KEY, JSON.stringify(obj)); }
+  function getNote(mIdx, day){ const all = loadCalNotes(); return all[mIdx+'-'+day] || null; }
+  function setNote(mIdx, day, text, reminder){ const all = loadCalNotes(); all[mIdx+'-'+day] = {note:text, reminder:!!reminder}; saveCalNotesData(all); }
+  function deleteNote(mIdx, day){ const all = loadCalNotes(); delete all[mIdx+'-'+day]; saveCalNotesData(all); }
+  function loadMonthRemarks(){ try{ return JSON.parse(localStorage.getItem(MONTH_REMARKS_KEY)) || {}; }catch(e){ return {}; } }
+  function saveMonthRemarksData(obj){ localStorage.setItem(MONTH_REMARKS_KEY, JSON.stringify(obj)); }
+
   addEvent(0,1,'holiday','नयाँ वर्ष २०८३');
   addEvent(0,18,'holiday','बुद्ध जयन्ती/मे दिवस/उभौली');
   addEvent(1,15,'holiday','गणतन्त्र दिवस');
@@ -8823,24 +8864,122 @@ setTimeout(()=>{
       const dayEvents = npEvents[key] || [];
       const isHoliday = dayEvents.some(e=>e.type==='holiday') || weekday===6;
       const isToday = todayMonthIdx===mIdx && todayDay===day;
+      const userNote = getNote(mIdx, day);
       const c = document.createElement('div');
-      c.className = 'np-cell' + (weekday===6?' sat':'') + (isHoliday?' holiday':'') + (isToday?' is-today':'');
-      c.innerHTML = `<div class="np-ad-num">${ad.getDate()}/${ad.getMonth()+1}</div><div class="np-bs-num">${toNp(day)}</div>${dayEvents.slice(0,1).map(e=>`<div class="np-tag ${e.type}">${e.label}</div>`).join('')}`;
+      c.className = 'np-cell' + (weekday===6?' sat':'') + (isHoliday?' holiday':'') + (isToday?' is-today':'') + (userNote?' has-note':'');
+      c.innerHTML = `<div class="np-ad-num">${ad.getDate()}/${ad.getMonth()+1}</div>`
+        + (userNote ? `<div class="np-note-marker" title="${escapeHtml(userNote.note)}">${userNote.reminder?'🔔':'📝'}</div>` : '')
+        + `<div class="np-bs-num">${toNp(day)}</div>${dayEvents.slice(0,1).map(e=>`<div class="np-tag ${e.type}">${e.label}</div>`).join('')}`;
       c.addEventListener('click', () => showNpDetail(mIdx, day, ad, dayEvents));
       grid.appendChild(c);
     }
+    renderNpMonthRemarks();
+    renderNpReminders();
   }
+
+  let npSelMonth = null, npSelDay = null;
 
   function showNpDetail(mIdx, day, ad, dayEvents){
     const panel = document.getElementById('np-detail-panel');
     if(!panel) return;
+    npSelMonth = mIdx; npSelDay = day;
     const title = `${monthNamesNp[mIdx]} ${toNp(day)}, २०८३ · ${fmtADShort(ad)}`;
+    const userNote = getNote(mIdx, day);
+    let html = `<div class="np-cal-panel-title">${title}</div>`;
     if(dayEvents.length===0){
-      panel.innerHTML = `<div class="np-cal-panel-title">${title}</div><div class="np-cal-panel-empty">यो दिन कुनै विशेष कार्यक्रम छैन।</div>`;
+      html += `<div class="np-cal-panel-empty">यो दिन कुनै सार्वजनिक कार्यक्रम छैन।</div>`;
     } else {
-      panel.innerHTML = `<div class="np-cal-panel-title">${title}</div>` + dayEvents.map(e=>`<div class="np-event-row"><span class="np-tag ${e.type}">${e.type==='holiday'?'बिदा':e.type==='sait'?'लगन':'पर्व'}</span> ${e.label}</div>`).join('');
+      html += dayEvents.map(e=>`<div class="np-event-row"><span class="np-tag ${e.type}">${e.type==='holiday'?'बिदा':e.type==='sait'?'लगन':'पर्व'}</span> ${e.label}</div>`).join('');
     }
+    html += `
+      <div class="np-note-editor">
+        <div class="np-note-editor-title">🗒️ Working Note / Remark (यस दिनको लागि)</div>
+        <textarea id="np-note-input" placeholder="यस दिनको लागि सानो working note वा remark लेख्नुहोस्...">${userNote ? escapeHtml(userNote.note) : ''}</textarea>
+        <label class="np-note-reminder-toggle">
+          <input type="checkbox" id="np-note-reminder" ${userNote && userNote.reminder ? 'checked' : ''}>
+          🔔 यो event/काम को रिमाइन्डर राख्ने
+        </label>
+        <div class="np-note-editor-actions">
+          <button class="btn btn-primary btn-sm" onclick="saveNpNote()">💾 Save</button>
+          ${userNote ? `<button class="btn btn-secondary btn-sm" onclick="deleteNpNote()">🗑️ Delete</button>` : ''}
+          <span id="np-note-saved-tag" class="np-remarks-saved-tag"></span>
+        </div>
+      </div>`;
+    panel.innerHTML = html;
   }
+
+  window.saveNpNote = function(){
+    if(npSelMonth===null) return;
+    const inputEl = document.getElementById('np-note-input');
+    const remEl = document.getElementById('np-note-reminder');
+    const text = inputEl ? inputEl.value.trim() : '';
+    const reminder = remEl ? remEl.checked : false;
+    if(!text){ if(typeof toast==='function') toast('कृपया नोट लेख्नुहोस्'); return; }
+    setNote(npSelMonth, npSelDay, text, reminder);
+    renderNpCalendar();
+    const ad = bsToAD(npSelMonth, npSelDay);
+    showNpDetail(npSelMonth, npSelDay, ad, npEvents[npSelMonth+'-'+npSelDay] || []);
+    if(typeof toast==='function') toast('नोट सेभ भयो ✅');
+  };
+
+  window.deleteNpNote = function(){
+    if(npSelMonth===null) return;
+    deleteNote(npSelMonth, npSelDay);
+    renderNpCalendar();
+    const ad = bsToAD(npSelMonth, npSelDay);
+    showNpDetail(npSelMonth, npSelDay, ad, npEvents[npSelMonth+'-'+npSelDay] || []);
+    if(typeof toast==='function') toast('नोट मेटियो 🗑️');
+  };
+
+  function renderNpReminders(){
+    const el = document.getElementById('np-reminders-strip');
+    if(!el) return;
+    const all = loadCalNotes();
+    const items = [];
+    Object.keys(all).forEach(key=>{
+      const rec = all[key];
+      if(!rec || !rec.reminder) return;
+      const parts = key.split('-');
+      const mIdx = Number(parts[0]), day = Number(parts[1]);
+      const ad = bsToAD(mIdx, day);
+      items.push({mIdx, day, ad, note:rec.note});
+    });
+    const upcoming = items.filter(it => it.ad >= nowMid).sort((a,b)=>a.ad-b.ad).slice(0,8);
+    if(upcoming.length===0){ el.innerHTML=''; el.style.display='none'; return; }
+    el.style.display='flex';
+    el.innerHTML = '<div class="np-reminders-label">🔔 आगामी रिमाइन्डरहरू:</div>' + upcoming.map(it=>{
+      const diffDays = Math.round((it.ad - nowMid)/86400000);
+      const whenLabel = diffDays===0 ? 'आज' : diffDays===1 ? 'भोलि' : `${toNp(diffDays)} दिनमा`;
+      return `<div class="np-reminder-chip" onclick="npGoToReminder(${it.mIdx},${it.day})"><b>${monthNamesNp[it.mIdx]} ${toNp(it.day)}</b> · ${escapeHtml(it.note)} <span class="np-reminder-when">(${whenLabel})</span></div>`;
+    }).join('');
+  }
+
+  window.npGoToReminder = function(mIdx, day){
+    npCurrentMonth = mIdx;
+    renderNpCalendar();
+    const ad = bsToAD(mIdx, day);
+    showNpDetail(mIdx, day, ad, npEvents[mIdx+'-'+day] || []);
+  };
+
+  function renderNpMonthRemarks(){
+    const labelEl = document.getElementById('np-remarks-month-label');
+    const inputEl = document.getElementById('np-month-remarks-input');
+    if(!labelEl || !inputEl) return;
+    labelEl.textContent = monthNamesNp[npCurrentMonth];
+    const all = loadMonthRemarks();
+    inputEl.value = all[npCurrentMonth] || '';
+  }
+
+  window.saveNpMonthRemarks = function(){
+    const inputEl = document.getElementById('np-month-remarks-input');
+    if(!inputEl) return;
+    const all = loadMonthRemarks();
+    all[npCurrentMonth] = inputEl.value;
+    saveMonthRemarksData(all);
+    const tag = document.getElementById('np-remarks-saved-tag');
+    if(tag){ tag.textContent='✓ Saved'; setTimeout(()=>{ if(tag) tag.textContent=''; },1500); }
+    if(typeof toast==='function') toast('महिनाको remarks सेभ भयो ✅');
+  };
 
   function updateNpTodayLine(){
     const el = document.getElementById('np-today-line');
