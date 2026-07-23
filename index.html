@@ -5118,9 +5118,13 @@ function openQuotationFromStock(id){
 }
 
 function setQuotationFromBike(bike){
+  const isNewBike=!quotationStockMatch||quotationStockMatch.id!==bike.id;
   quotationStockMatch=bike;
   document.getElementById('q-bike-model').value=bike.model;
   onQuotationModelChange(false);
+  if(isNewBike){const discEl=document.getElementById('q-discount');if(discEl)discEl.value='';}
+  if(bike.price)setDeliveryField('q-price','Rs. '+fmt(bike.price),true);
+  calcQuotationNetPrice();
   if(bike.colour)setDeliveryField('q-bike-color',bike.colour,true);
   if(bike.engineno)setDeliveryField('q-engine-no',bike.engineno,true);
   if(bike.chassisno)setDeliveryField('q-chassis-no',bike.chassisno,true);
@@ -5166,6 +5170,7 @@ function lookupQByEngine(){
 }
 
 function autoFillQuotationFromMatch(bike){
+  const isNewBike=!quotationStockMatch||quotationStockMatch.id!==bike.id;
   const chassis=document.getElementById('q-chassis-no').value.trim();
   const engine=document.getElementById('q-engine-no').value.trim();
   if(bike.chassisno&&!chassis)setDeliveryField('q-chassis-no',bike.chassisno,true);
@@ -5175,6 +5180,10 @@ function autoFillQuotationFromMatch(bike){
   if(bike.year&&!document.getElementById('q-model-year').value.trim())setDeliveryField('q-model-year',bike.year,true);
   const sel=document.getElementById('q-bike-model');
   if(!sel.value){ sel.value=bike.model; onQuotationModelChange(false); }
+  if(isNewBike){const discEl=document.getElementById('q-discount');if(discEl)discEl.value='';}
+  if(bike.price)setDeliveryField('q-price','Rs. '+fmt(bike.price),true);
+  calcQuotationNetPrice();
+  quotationStockMatch=bike;
   showQStockMatchInfo(bike);
 }
 
@@ -5199,7 +5208,7 @@ function calcQuotationNetPrice(){
   const netEl=document.getElementById('q-net-price');
   const wordsEl=document.getElementById('q-net-words');
   if(!priceEl||!netEl)return;
-  const marked=parseFloat(String(priceEl.value).replace(/[^0-9.]/g,''))||0;
+  const marked=parseFloat(String(priceEl.value).replace(/[^0-9]/g,''))||0;
   const discount=parseFloat(discEl&&discEl.value)||0;
   const net=marked-discount;
   if(marked<=0){ netEl.value=''; if(wordsEl)wordsEl.value=''; return; }
