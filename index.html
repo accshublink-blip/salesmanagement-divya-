@@ -437,6 +437,10 @@ tr:hover td { background: var(--gray-50); }
 #logo-preview-q.visible { display: block; }
 #logo-placeholder-q { width: 88px; height: 66px; border: 2px dashed #bbb; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #aaa; text-align: center; cursor: pointer; flex-shrink: 0; }
 #logo-placeholder-q:hover { border-color: var(--accent); color: var(--accent); }
+#logo-preview-c { width: 88px; height: 66px; object-fit: contain; display: none; }
+#logo-preview-c.visible { display: block; }
+#logo-placeholder-c { width: 88px; height: 66px; border: 2px dashed #bbb; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #aaa; text-align: center; cursor: pointer; flex-shrink: 0; }
+#logo-placeholder-c:hover { border-color: var(--accent); color: var(--accent); }
 .company-info { flex: 1; }
 .company-name { font-size: 21px; font-weight: 800; color: #0a1e42; letter-spacing: 0.5px; line-height: 1.2; }
 .company-sub { font-size: 11px; color: var(--mid); margin-top: 2px; }
@@ -466,6 +470,27 @@ select.field-input { cursor: pointer; }
 .sig-line { border-bottom: 1px solid var(--dark); margin-bottom: 5px; height: 36px; }
 .sig-label { font-size: 10.5px; color: var(--mid); font-weight: 600; }
 .doc-footer { margin-top: 16px; padding-top: 8px; border-top: 1px solid #ddd; text-align: center; font-size: 9.5px; color: #888; }
+
+/* ── DELIVERY CHALLAN ── */
+.challan-wrap { max-width: 900px; margin: 0 auto; }
+.challan-controls { background: #fff; border: 1px solid #ddd; border-radius: 8px; padding: 14px 20px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; box-shadow: var(--shadow); }
+.challan-controls h2 { font-size: 15px; color: var(--dark); flex: 1; min-width: 120px; }
+.chal-items-table { width: 100%; border-collapse: collapse; font-size: 11.5px; margin-top: 4px; }
+.chal-items-table th { background: #0a1e42; color: #fff; font-size: 10px; text-transform: uppercase; letter-spacing: .4px; padding: 5px 6px; text-align: left; }
+.chal-items-table td { border: 1px solid #ddd; padding: 3px 5px; vertical-align: top; }
+.chal-items-table input, .chal-items-table select { width: 100%; border: none; outline: none; font-size: 11.5px; font-family: inherit; background: transparent; padding: 3px 2px; color: #000; font-weight: 700; }
+.chal-items-table input:focus { background: rgba(26,122,74,0.06); }
+.chal-items-table input.auto-filled { background: rgba(26,122,74,0.08); }
+.chal-items-table .chal-num { text-align: right; }
+.chal-items-table .chal-rm { background: none; border: none; color: var(--red); font-size: 15px; cursor: pointer; padding: 0 4px; }
+.chal-items-table tfoot td { font-weight: 800; background: #fafafa; }
+.chal-add-row { margin-top: 8px; }
+.chal-totals { display: flex; justify-content: flex-end; margin-top: 8px; }
+.chal-totals table { font-size: 12.5px; }
+.chal-totals td { padding: 3px 8px; }
+.chal-totals td.lbl { color: var(--mid); font-weight: 600; }
+.chal-totals td.val { text-align: right; font-weight: 700; }
+.chal-words { border-top: 1px solid #ddd; margin-top: 10px; padding-top: 8px; font-size: 11.5px; font-style: italic; }
 .tr-rating-table { width: 100%; border-collapse: collapse; margin-bottom: 6px; }
 .tr-rating-table th, .tr-rating-table td { border: 1px solid #e5e7eb; text-align: center; padding: 6px 4px; font-size: 11.5px; }
 .tr-rating-table th { background: #f9fafb; font-weight: 700; color: var(--mid); }
@@ -615,33 +640,38 @@ select.field-input { cursor: pointer; }
   * { -webkit-print-color-adjust: exact !important; color-adjust: exact !important; print-color-adjust: exact !important; }
   /* hide chrome */
   .sidebar, .main > .topbar, .mob-topbar, .hamburger, .sidebar-overlay,
-  .delivery-controls, .quotation-controls,
-  .stock-lookup-banner, .stock-match-info, .stock-out-banner,
+  .delivery-controls, .quotation-controls, .challan-controls,
+  .stock-lookup-banner, .stock-match-info, .stock-out-banner, .challan-out-banner,
   .receipt-controls, .test-ride-controls,
-  #deliver-btn-wrap { display: none !important; }
+  #deliver-btn-wrap, #challan-save-btn-wrap, .chal-rm, .chal-add-row { display: none !important; }
   .main { margin-left: 0 !important; }
   .content { padding: 0 !important; }
-  /* delivery / quotation / test-ride */
-  .delivery-wrap, .quotation-wrap { max-width: 100%; }
-  #delivery-doc, #quotation-doc, #test-ride-doc { box-shadow: none; border: none; padding: 18px 26px; }
+  /* delivery / quotation / test-ride / challan */
+  .delivery-wrap, .quotation-wrap, .challan-wrap { max-width: 100%; }
+  #delivery-doc, #quotation-doc, #test-ride-doc, #challan-doc { box-shadow: none; border: none; padding: 18px 26px; }
   input, select { border-bottom: 1px solid #999 !important; background: transparent !important; }
   #delivery-doc input, #delivery-doc select,
   #quotation-doc input, #quotation-doc select,
-  #test-ride-doc input, #test-ride-doc select { font-weight: 700 !important; color: #000 !important; border-bottom: 1px solid #555 !important; }
-  #delivery-doc .field-label, #quotation-doc .field-label, #test-ride-doc .field-label,
-  #delivery-doc .sig-label, #quotation-doc .sig-label, #test-ride-doc .sig-label { font-weight: 800 !important; color: #000 !important; }
+  #test-ride-doc input, #test-ride-doc select,
+  #challan-doc input, #challan-doc select { font-weight: 700 !important; color: #000 !important; border-bottom: 1px solid #555 !important; }
+  #challan-doc .chal-items-table input { border-bottom: none !important; }
+  #delivery-doc .field-label, #quotation-doc .field-label, #test-ride-doc .field-label, #challan-doc .field-label,
+  #delivery-doc .sig-label, #quotation-doc .sig-label, #test-ride-doc .sig-label, #challan-doc .sig-label { font-weight: 800 !important; color: #000 !important; }
   #delivery-doc .terms-list li, #quotation-doc .terms-list li,
   #delivery-doc .ack-box, #quotation-doc .ack-box, #test-ride-doc .ack-box,
   #quotation-doc .quote-intro, #quotation-doc .quote-closing { font-weight: 700 !important; color: #000 !important; }
-  #delivery-doc .doc-section-title, #quotation-doc .doc-section-title, #test-ride-doc .doc-section-title { font-weight: 800 !important; color: #fff !important; background: #0a1e42 !important; }
-  #delivery-doc .company-name, #quotation-doc .company-name, #test-ride-doc .company-name { color: #0a1e42 !important; }
+  #delivery-doc .doc-section-title, #quotation-doc .doc-section-title, #test-ride-doc .doc-section-title, #challan-doc .doc-section-title { font-weight: 800 !important; color: #fff !important; background: #0a1e42 !important; }
+  #delivery-doc .company-name, #quotation-doc .company-name, #test-ride-doc .company-name, #challan-doc .company-name { color: #0a1e42 !important; }
+  #challan-doc .chal-items-table th { background: #0a1e42 !important; color: #fff !important; }
+  #challan-doc .chal-items-table, #challan-doc .chal-items-table td, #challan-doc .chal-items-table th { border-color: #333 !important; }
+  #challan-doc .doc-section, #challan-doc .chal-items-table, #challan-doc .sig-row, #challan-doc .doc-footer { page-break-inside: avoid; break-inside: avoid; }
   #test-ride-doc .tr-rating-table input[type="radio"] { accent-color: #000 !important; }
   .receipt-doc .field-label { font-weight: 800 !important; color: #000 !important; }
   .receipt-doc .receipt-field, .receipt-doc .receipt-mirror { font-weight: 700 !important; color: #000 !important; }
   .receipt-doc .paymode-label, .receipt-doc .sig-label { font-weight: 800 !important; color: #000 !important; }
   .receipt-copy-label { font-weight: 800 !important; }
-  #logo-placeholder, #logo-placeholder-q { display: none !important; }
-  #logo-preview, #logo-preview-q { display: block !important; }
+  #logo-placeholder, #logo-placeholder-q, #logo-placeholder-c { display: none !important; }
+  #logo-preview, #logo-preview-q, #logo-preview-c { display: block !important; }
   /* receipt — force everything onto a single A4 page */
   html, body { height: auto !important; }
   .receipt-wrap { max-width: 100%; }
@@ -691,6 +721,7 @@ select.field-input { cursor: pointer; }
   #voucher-print-area input::placeholder, #voucher-print-area textarea::placeholder { color: transparent !important; opacity: 0 !important; }
   .voucher-ledger-card { display: none !important; }
   #voucher-ledger-print-area { display: block !important; max-width: 100%; }
+  #challan-ledger-print-area { display: block !important; max-width: 100%; }
   /* hide placeholder/hint text on print when a field is left empty */
   #receipt-print-area input::placeholder { color: transparent !important; opacity: 0 !important; }
   #receipt-print-area input::-webkit-input-placeholder { color: transparent !important; opacity: 0 !important; }
@@ -841,6 +872,14 @@ try{
     <div class="nav-item" onclick="showPage('delivery',this)" data-page="delivery">
       <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
       Delivery Sheet
+    </div>
+    <div class="nav-item" onclick="showPage('challan',this)" data-page="challan">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="12" y2="17"/><circle cx="17.5" cy="17.5" r="3.2"/><path d="m16.3 17.5 .9 .9 1.6-1.7"/></svg>
+      Delivery Challan
+    </div>
+    <div class="nav-item" onclick="showPage('challan-ledger',this)" data-page="challan-ledger">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 19V5a2 2 0 0 1 2-2h10l4 4v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><path d="M14 3v4h4"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/></svg>
+      Challan Ledger
     </div>
     <div class="nav-item" onclick="showPage('quotation',this)" data-page="quotation">
       <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/></svg>
@@ -1290,6 +1329,223 @@ try{
           </button>
         </div>
 
+      </div>
+    </div>
+
+    <!-- ══ DELIVERY CHALLAN PAGE ══ -->
+    <div class="page-section" id="page-challan">
+      <div class="challan-wrap">
+
+        <!-- CONTROLS -->
+        <div class="challan-controls">
+          <h2>📜 Delivery Challan</h2>
+          <button class="btn btn-secondary" onclick="addChallanItem()">➕ Add Item</button>
+          <button class="btn btn-secondary" onclick="clearChallanForm()">🗑️ Clear</button>
+          <button class="btn btn-secondary" onclick="showPage('challan-ledger',document.querySelector('.nav-item[data-page=&quot;challan-ledger&quot;]'))">📖 View Ledger</button>
+          <button class="btn btn-green-solid" onclick="saveChallanPDF()">💾 Save PDF</button>
+          <button class="btn btn-red" onclick="window.print()">🖨️ Print</button>
+        </div>
+
+        <!-- STOCK LOOKUP BANNER -->
+        <div class="stock-lookup-banner">
+          <svg width="20" height="20" fill="none" stroke="var(--green-dark)" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <div>
+            <div class="hint">🔗 Stock ma jodiyeko! Har item ma Chassis No. ya Engine No. type garda auto-fill hune chha.</div>
+            <div style="font-size:11.5px;color:var(--gray-500);margin-top:2px">Challan save garda matched bike(s) automatically "Sold/Out" huncha — "🚀 Save Challan &amp; Mark Stock Sold" button click garus.</div>
+          </div>
+        </div>
+
+        <!-- CHALLAN OUT CONFIRM -->
+        <div class="stock-out-banner challan-out-banner" id="challan-out-banner">
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+            <span style="font-size:22px">✅</span>
+            <div style="flex:1">
+              <div style="font-weight:600;color:var(--green-dark);font-size:14px" id="challan-out-msg">Challan saved ra stock out bhayo!</div>
+              <div style="font-size:12px;color:var(--gray-600);margin-top:2px">Stock management ma "Sold/Out" mark bhayo. Now PDF print/save garna milcha.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- DOCUMENT -->
+        <div id="challan-doc">
+          <div class="doc-header">
+            <div id="logo-placeholder-c" onclick="document.getElementById('logo-file-c').click()" title="Click to upload logo">Click<br>Logo</div>
+            <input type="file" id="logo-file-c" accept="image/*" style="display:none" onchange="handleLogoUpload(event)">
+            <img id="logo-preview-c" src="" alt="Logo">
+            <div class="company-info">
+              <div class="company-name">Divya Auto Hub Pvt. Ltd.</div>
+              <div class="company-sub">Maharajgunj-03, Kathmandu, Nepal</div>
+              <div class="company-sub">📞 01-4533133 / 9851061611 / 9801204448 &nbsp;|&nbsp; ✉️ divyautohub@gmail.com</div>
+            </div>
+            <div style="text-align:right;flex-shrink:0">
+              <div style="font-size:10px;font-weight:600;color:#666;margin-bottom:3px">Delivery No.</div>
+              <input class="field-input" id="c-no" style="width:120px;text-align:center;font-size:12.5px;font-weight:700" placeholder="DC-0001">
+            </div>
+          </div>
+
+          <div class="doc-title">Delivery Challan</div>
+
+          <!-- SENDER / RECEIVER -->
+          <div class="doc-section">
+            <div class="doc-section-title">Sender Details</div>
+            <div class="field-grid two-col">
+              <div class="field-row" style="grid-column:1/-1"><span class="field-label">Sender's Name:</span><input class="field-input" id="c-s-name" value="Divya Auto Hub Pvt. Ltd."></div>
+              <div class="field-row"><span class="field-label">PAN Number:</span><input class="field-input" id="c-s-pan" value="621273849"></div>
+              <div class="field-row"><span class="field-label">Branch:</span><input class="field-input" id="c-s-branch" value="Maharajgunj-03"></div>
+              <div class="field-row" style="grid-column:1/-1"><span class="field-label">Address:</span><input class="field-input" id="c-s-address" value="Maharajgunj-03, Kathmandu"></div>
+              <div class="field-row" style="grid-column:1/-1"><span class="field-label">Phone No.:</span><input class="field-input" id="c-s-phone" value="9801204448 / 01-4533133 / 9851061611"></div>
+            </div>
+          </div>
+
+          <div class="doc-section">
+            <div class="doc-section-title">Receiver Details</div>
+            <div class="field-grid two-col">
+              <div class="field-row" style="grid-column:1/-1"><span class="field-label">Receiver's Name:</span><input class="field-input" id="c-r-name" placeholder="e.g. Ram Bahadur Thapa"></div>
+              <div class="field-row"><span class="field-label">Receiver's PAN:</span><input class="field-input" id="c-r-pan" placeholder="PAN number"></div>
+              <div class="field-row"><span class="field-label">City:</span><input class="field-input" id="c-r-city" placeholder="e.g. Kathmandu"></div>
+              <div class="field-row" style="grid-column:1/-1"><span class="field-label">Address:</span><input class="field-input" id="c-r-address" placeholder="Full address"></div>
+            </div>
+          </div>
+
+          <!-- DELIVERY INFO -->
+          <div class="doc-section">
+            <div class="doc-section-title">Delivery Info</div>
+            <div class="field-grid two-col">
+              <div class="field-row"><span class="field-label">Delivery Date:</span><input class="field-input" type="date" id="c-d-date"></div>
+              <div class="field-row"><span class="field-label">Transaction Date:</span><input class="field-input" type="date" id="c-t-date"></div>
+              <div class="field-row"><span class="field-label">Customer Ref. No.:</span><input class="field-input" id="c-ref"></div>
+              <div class="field-row"><span class="field-label">Contact Person:</span><input class="field-input" id="c-person"></div>
+              <div class="field-row" style="grid-column:1/-1"><span class="field-label">Contact Person Add.:</span><input class="field-input" id="c-person-add"></div>
+            </div>
+          </div>
+
+          <!-- ITEMS -->
+          <div class="doc-section">
+            <div class="doc-section-title">Item(s)</div>
+            <table class="chal-items-table">
+              <thead>
+                <tr>
+                  <th style="width:24px">Sr</th>
+                  <th style="min-width:130px">Bike Model</th>
+                  <th style="min-width:100px">Chassis No.</th>
+                  <th style="min-width:100px">Engine No.</th>
+                  <th style="min-width:90px">Reg. No.</th>
+                  <th style="width:70px">Color</th>
+                  <th style="width:55px">MFD Yr</th>
+                  <th style="width:45px">Qty</th>
+                  <th style="width:80px">Rate</th>
+                  <th style="width:70px">Disc.</th>
+                  <th style="width:85px">Amount</th>
+                  <th style="width:18px"></th>
+                </tr>
+              </thead>
+              <tbody id="chal-items-body"></tbody>
+              <tfoot>
+                <tr>
+                  <td colspan="7" class="chal-num">TOTAL</td>
+                  <td class="chal-num" id="chal-total-qty">0</td>
+                  <td></td>
+                  <td></td>
+                  <td class="chal-num" id="chal-subtotal">0.00</td>
+                  <td></td>
+                </tr>
+              </tfoot>
+            </table>
+            <datalist id="chal-model-dl"></datalist>
+            <div class="chal-add-row"><button class="btn btn-secondary btn-sm" onclick="addChallanItem()">➕ Add Item</button></div>
+          </div>
+
+          <!-- CHARGES -->
+          <div class="doc-section">
+            <div class="doc-section-title">Charges &amp; Narration</div>
+            <div class="field-grid two-col">
+              <div class="field-row"><span class="field-label">VAT %:</span><input class="field-input" type="number" id="c-vat" value="13" step="0.01" oninput="renderChallanTotals()"></div>
+              <div class="field-row"><span class="field-label">Narration:</span><input class="field-input" id="c-narration" placeholder="e.g. Maharajgunj"></div>
+              <div class="field-row" style="grid-column:1/-1"><span class="field-label">Note:</span><input class="field-input" id="c-note" value="Price subject to be changed as per current MRP.*"></div>
+            </div>
+            <div class="chal-totals">
+              <table>
+                <tr><td class="lbl">Sub Total:</td><td class="val" id="chal-t-sub">0.00</td></tr>
+                <tr><td class="lbl">Taxable Amount:</td><td class="val" id="chal-t-taxable">0.00</td></tr>
+                <tr><td class="lbl" id="chal-t-vat-lbl">VAT @ 13%:</td><td class="val" id="chal-t-vat">0.00</td></tr>
+                <tr><td class="lbl">Total Amount:</td><td class="val" id="chal-t-total">0.00</td></tr>
+              </table>
+            </div>
+            <div class="chal-words">Net Amount (In Words): <span id="chal-words">—</span></div>
+          </div>
+
+          <!-- SIGNATURES -->
+          <div class="sig-row">
+            <div class="sig-block"><div class="sig-line"></div><div class="sig-label">Received by</div></div>
+            <div class="sig-block"><div class="sig-line"></div><div class="sig-label">Authorised Signature</div></div>
+          </div>
+
+          <div class="doc-footer">Divya Auto Hub Pvt. Ltd. | Maharajgunj-03, Kathmandu, Nepal | 01-4533133 / 9851061611 / 9801204448 | divyautohub@gmail.com | This is a computer generated delivery challan</div>
+        </div>
+
+        <!-- SAVE BUTTON -->
+        <div style="margin-top:16px;display:flex;gap:10px;justify-content:flex-end" id="challan-save-btn-wrap">
+          <button class="btn btn-primary" style="background:linear-gradient(135deg,#1a7a4a,#2ecc71);font-size:14px;padding:10px 22px" onclick="confirmChallanAndMarkSold()" id="challan-save-btn">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+            🚀 Save Challan &amp; Mark Stock Sold
+          </button>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ══ DELIVERY CHALLAN LEDGER PAGE ══ -->
+    <div class="page-section" id="page-challan-ledger">
+      <div class="receipt-wrap">
+        <div class="table-card receipt-ledger-card no-print" style="margin-bottom:0;border-bottom-left-radius:0;border-bottom-right-radius:0;border-bottom:none">
+          <div class="table-header" style="flex-wrap:wrap;gap:8px">
+            <span class="table-title">📜 Delivery Challan Ledger</span>
+            <span id="challan-ledger-total" style="font-size:13px;font-weight:600;color:var(--green);flex:1"></span>
+            <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+              <div class="search-box" style="width:180px">
+                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                <input id="challan-ledger-search" placeholder="Search receiver / no. / model…" oninput="renderChallanLedger()" style="width:160px">
+              </div>
+              <button class="btn btn-secondary btn-sm" onclick="exportChallanLedgerExcel()">⬇ Excel</button>
+              <button class="btn btn-red btn-sm" onclick="printChallanLedger()">🖨️ Print PDF</button>
+            </div>
+          </div>
+        </div>
+        <div class="table-card receipt-ledger-card no-print" style="border-top-left-radius:0;border-top-right-radius:0">
+          <div class="tbl-wrap">
+            <table id="challan-ledger-table">
+              <thead><tr>
+                <th>S.N.</th><th>Challan No.</th><th>Date</th><th>Receiver</th><th>Item(s)</th>
+                <th style="text-align:center">Qty</th><th style="text-align:right">Amount (NPR)</th><th style="text-align:center">Actions</th>
+              </tr></thead>
+              <tbody id="challan-ledger-body"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- LEDGER PRINT AREA -->
+        <div id="challan-ledger-print-area" style="display:none">
+          <div style="text-align:center;margin-bottom:12px">
+            <div style="font-size:18px;font-weight:800;letter-spacing:1px">DIVYA AUTO HUB</div>
+            <div style="font-size:12px;color:#555;margin-top:2px">Delivery Challan Ledger</div>
+            <div style="font-size:11px;color:#888;margin-top:1px" id="challan-ledger-print-meta"></div>
+          </div>
+          <table style="width:100%;border-collapse:collapse;font-size:11px">
+            <thead>
+              <tr style="background:#f3f4f6">
+                <th style="border:1px solid #ccc;padding:5px 7px;text-align:left">S.N.</th>
+                <th style="border:1px solid #ccc;padding:5px 7px;text-align:left">Challan No.</th>
+                <th style="border:1px solid #ccc;padding:5px 7px;text-align:left">Date</th>
+                <th style="border:1px solid #ccc;padding:5px 7px;text-align:left">Receiver</th>
+                <th style="border:1px solid #ccc;padding:5px 7px;text-align:left">Item(s)</th>
+                <th style="border:1px solid #ccc;padding:5px 7px;text-align:center">Qty</th>
+                <th style="border:1px solid #ccc;padding:5px 7px;text-align:right">Amount (NPR)</th>
+              </tr>
+            </thead>
+            <tbody id="challan-ledger-print-body"></tbody>
+            <tfoot id="challan-ledger-print-foot"></tfoot>
+          </table>
+        </div>
       </div>
     </div>
 
@@ -3158,7 +3414,7 @@ let suppressAutoBackup=false;
 async function dbSet(k,v) {
   try {
     localStorage.setItem(k,JSON.stringify(v));
-    if(!suppressAutoBackup&&(k==='dah2-stock'||k==='dah2-sales'||k==='dah2-bookings'||k==='dah2-receipts'||k==='dah2-vouchers')){
+    if(!suppressAutoBackup&&(k==='dah2-stock'||k==='dah2-sales'||k==='dah2-bookings'||k==='dah2-receipts'||k==='dah2-vouchers'||k==='dah2-challans')){
       scheduleAutoBackup();
       scheduleFirebaseSync();
     }
@@ -3177,7 +3433,7 @@ async function dbSet(k,v) {
 //  ☁️ SUPABASE CLOUD SYNC (automatic, cross-device)
 // ══════════════════════════════════════════════
 const SYNC_TABLE='dah_sync';
-const SYNC_KEYS=['dah2-stock','dah2-sales','dah2-bookings','dah2-receipts','dah2-vouchers','dah2-valuation-sheets','dah2-purchases','dah2-payable-ledger'];
+const SYNC_KEYS=['dah2-stock','dah2-sales','dah2-bookings','dah2-receipts','dah2-vouchers','dah2-valuation-sheets','dah2-purchases','dah2-payable-ledger','dah2-challans'];
 let cloudPushTimer=null;
 const cloudPushQueue={};
 
@@ -3249,8 +3505,9 @@ async function manualSyncNow(){
     receipts=await dbGet('dah2-receipts')||[];
     vouchers=await dbGet('dah2-vouchers')||[];
     valuationSheets=await dbGet('dah2-valuation-sheets')||[];
+    challans=await dbGet('dah2-challans')||[];
     if(typeof loadPurchases==='function')loadPurchases();
-    populateModelSelects();render();renderReceiptLedger();renderVoucherLedger();
+    populateModelSelects();render();renderReceiptLedger();renderVoucherLedger();renderChallanLedger();
     if(typeof renderValuationLedger==='function')renderValuationLedger();
     if(typeof loadPayables==='function')loadPayables();
     if(typeof renderPayableLedger==='function'){renderPayableLedger();renderPayableMetrics();renderPayableAlerts();}
@@ -3397,13 +3654,16 @@ async function init() {
   bookings = await dbGet('dah2-bookings') || [];
   receipts = await dbGet('dah2-receipts') || [];
   vouchers = await dbGet('dah2-vouchers') || [];
+  challans = await dbGet('dah2-challans') || [];
   populateModelSelects();
   initAllDistrictMuniSelects();
   render();
   renderReceiptLedger();
   renderVoucherLedger();
+  renderChallanLedger();
   setTodayBS();
   setTodayQuotation();
+  initChallanForm();
   loadLogo();
   loadValLogo();
   initFirebaseIfConfigured();
@@ -3438,7 +3698,7 @@ function getAllModelNames(){
 function populateModelSelects(){
   const allModels=getAllModelNames();
   const optsHtml=allModels.map(m=>`<option value="${m}"></option>`).join('');
-  ['f-model-dl','fs-model-dl','fb-model-dl','d-bike-model-dl','q-bike-model-dl'].forEach(id=>{
+  ['f-model-dl','fs-model-dl','fb-model-dl','d-bike-model-dl','q-bike-model-dl','chal-model-dl'].forEach(id=>{
     const dl=document.getElementById(id);
     if(dl)dl.innerHTML=optsHtml;
   });
@@ -3906,7 +4166,7 @@ function showPage(name,el){
   document.getElementById('page-'+name).classList.add('active');
   el.classList.add('active');
   currentPage=name;
-  const titles={stock:'Bike Stock',sales:'Sales Record',bookings:'Customer Bookings',delivery:'Bike Delivery Sheet',quotation:'Bike Quotation',['test-ride']:'Test Ride Form',['gift-coupon']:'Accessories Gift Coupon',['exchange-doc']:'Exchange Bike Document',['file-converter']:'File Converter',['emi-calc']:'Hulas EMI Calculator',receipt:'Cash Receipt',['receipt-ledger']:'Receipt Ledger',voucher:'Payment Voucher',['voucher-ledger']:'Voucher Ledger',valuation:'Valuation Sheet',['valuation-ledger']:'Valuation Ledger',dashboard:'Dashboard',calendar:'Nepali Calendar'};
+  const titles={stock:'Bike Stock',sales:'Sales Record',bookings:'Customer Bookings',delivery:'Bike Delivery Sheet',challan:'Delivery Challan',['challan-ledger']:'Delivery Challan Ledger',quotation:'Bike Quotation',['test-ride']:'Test Ride Form',['gift-coupon']:'Accessories Gift Coupon',['exchange-doc']:'Exchange Bike Document',['file-converter']:'File Converter',['emi-calc']:'Hulas EMI Calculator',receipt:'Cash Receipt',['receipt-ledger']:'Receipt Ledger',voucher:'Payment Voucher',['voucher-ledger']:'Voucher Ledger',valuation:'Valuation Sheet',['valuation-ledger']:'Valuation Ledger',dashboard:'Dashboard',calendar:'Nepali Calendar'};
   document.getElementById('page-title').textContent=titles[name];
   // mobile page bar sync
   const mobTitle=document.getElementById('mob-page-title');
@@ -3915,7 +4175,7 @@ function showPage(name,el){
   if(mobTitle) mobTitle.textContent=titles[name];
   if(mobBar) mobBar.style.display=window.innerWidth<=768?'flex':'none';
   const btn=document.getElementById('add-btn');
-  if(name==='delivery'||name==='quotation'||name==='test-ride'||name==='gift-coupon'||name==='exchange-doc'||name==='file-converter'||name==='emi-calc'||name==='dashboard'||name==='receipt'||name==='receipt-ledger'||name==='voucher'||name==='voucher-ledger'||name==='valuation'||name==='valuation-ledger'||name==='calendar'){
+  if(name==='delivery'||name==='challan'||name==='challan-ledger'||name==='quotation'||name==='test-ride'||name==='gift-coupon'||name==='exchange-doc'||name==='file-converter'||name==='emi-calc'||name==='dashboard'||name==='receipt'||name==='receipt-ledger'||name==='voucher'||name==='voucher-ledger'||name==='valuation'||name==='valuation-ledger'||name==='calendar'){
     btn.style.display='none';
     if(mobAddBtn) mobAddBtn.style.display='none';
   } else {
@@ -3924,6 +4184,8 @@ function showPage(name,el){
     if(mobAddBtn){ mobAddBtn.style.display='flex'; }
   }
   if(name==='dashboard')renderDashboard();
+  if(name==='challan'){initChallanForm();renderChallanItems();}
+  if(name==='challan-ledger')renderChallanLedger();
   if(name==='receipt-ledger')renderReceiptLedger();
   if(name==='voucher-ledger')renderVoucherLedger();
   if(name==='valuation-ledger')renderValuationLedger();
@@ -4853,6 +5115,423 @@ function clearDeliveryForm(silent=false){
   deliveryStockMatch=null;
 }
 
+// ══════════════════════════════════════════════
+//  DELIVERY CHALLAN — items + stock auto-fill + auto stock-out
+// ══════════════════════════════════════════════
+let challans = [];
+let challanItems = [];
+let challanItemSeq = 0;
+
+function escAttr(s){ return String(s==null?'':s).replace(/"/g,'&quot;'); }
+function escHtml(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function newChallanItem(prefill){
+  challanItemSeq++;
+  return Object.assign({id:challanItemSeq,model:'',chassis:'',engine:'',reg:'',color:'',mfd:'',qty:1,rate:0,discount:0,stockId:null},prefill||{});
+}
+
+function addChallanItem(prefill){
+  challanItems.push(newChallanItem(prefill));
+  renderChallanItems();
+}
+
+function removeChallanItem(id){
+  challanItems=challanItems.filter(i=>i.id!==id);
+  if(challanItems.length===0)addChallanItem();
+  else renderChallanItems();
+}
+
+function updateChallanItem(id,field,value){
+  const it=challanItems.find(i=>i.id===id);
+  if(!it)return;
+  if(['qty','rate','discount'].includes(field)) it[field]=parseFloat(value)||0;
+  else { it[field]=value; if(field!=='model') it.stockId=null; }
+  renderChallanTotals();
+}
+
+function populateChallanModelDatalist(){
+  const dl=document.getElementById('chal-model-dl');
+  if(!dl)return;
+  dl.innerHTML=getAllModelNames().map(m=>`<option value="${escAttr(m)}"></option>`).join('');
+}
+
+function renderChallanItems(){
+  populateChallanModelDatalist();
+  const body=document.getElementById('chal-items-body');
+  if(!body)return;
+  body.innerHTML='';
+  challanItems.forEach((it,idx)=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`
+      <td class="chal-num">${idx+1}</td>
+      <td><input list="chal-model-dl" autocomplete="off" value="${escAttr(it.model)}" placeholder="Model" oninput="updateChallanItem(${it.id},'model',this.value);onChallanModelChange(${it.id},false)" onblur="onChallanModelChange(${it.id},true)"></td>
+      <td><input value="${escAttr(it.chassis)}" placeholder="Type to search..." autocomplete="off" oninput="updateChallanItem(${it.id},'chassis',this.value);challanLookupByChassis(${it.id})"></td>
+      <td><input value="${escAttr(it.engine)}" placeholder="Type to search..." autocomplete="off" oninput="updateChallanItem(${it.id},'engine',this.value);challanLookupByEngine(${it.id})"></td>
+      <td><input value="${escAttr(it.reg)}" oninput="updateChallanItem(${it.id},'reg',this.value)"></td>
+      <td><input value="${escAttr(it.color)}" oninput="updateChallanItem(${it.id},'color',this.value)"></td>
+      <td><input value="${escAttr(it.mfd)}" oninput="updateChallanItem(${it.id},'mfd',this.value)"></td>
+      <td><input type="number" step="0.01" value="${it.qty}" class="chal-num" oninput="updateChallanItem(${it.id},'qty',this.value)"></td>
+      <td><input type="number" step="0.01" value="${it.rate}" class="chal-num" oninput="updateChallanItem(${it.id},'rate',this.value)"></td>
+      <td><input type="number" step="0.01" value="${it.discount}" class="chal-num" oninput="updateChallanItem(${it.id},'discount',this.value)"></td>
+      <td class="chal-num" id="chal-amt-${it.id}">0.00</td>
+      <td><button class="chal-rm" title="Remove" onclick="removeChallanItem(${it.id})">&times;</button></td>
+    `;
+    body.appendChild(tr);
+  });
+  renderChallanTotals();
+}
+
+function challanSetField(itemId,cell,value,highlight){
+  const row=document.querySelectorAll('#chal-items-body tr')[challanItems.findIndex(i=>i.id===itemId)];
+  if(!row)return;
+  const cols=['model','chassis','engine','reg','color','mfd'];
+  const inputs=row.querySelectorAll('input');
+  const colIdx=cols.indexOf(cell);
+  if(colIdx<0)return;
+  const el=inputs[colIdx];
+  if(!el)return;
+  el.value=value;
+  if(highlight){el.classList.add('auto-filled');setTimeout(()=>el.classList.remove('auto-filled'),3000);}
+}
+
+function autoFillChallanItemFromStock(id,bike){
+  const it=challanItems.find(i=>i.id===id);
+  if(!it)return;
+  it.stockId=bike.id;
+  if(bike.model&&!it.model){it.model=bike.model;challanSetField(id,'model',bike.model,true);}
+  if(bike.chassisno&&!it.chassis){it.chassis=bike.chassisno;challanSetField(id,'chassis',bike.chassisno,true);}
+  if(bike.engineno&&!it.engine){it.engine=bike.engineno;challanSetField(id,'engine',bike.engineno,true);}
+  if(bike.bikeno&&!it.reg){it.reg=bike.bikeno;challanSetField(id,'reg',bike.bikeno,true);}
+  if(bike.colour&&!it.color){it.color=bike.colour;challanSetField(id,'color',bike.colour,true);}
+  if(bike.year&&!it.mfd){it.mfd=bike.year;challanSetField(id,'mfd',bike.year,true);}
+  if(bike.price&&!it.rate){
+    it.rate=bike.price;
+    const rateInput=document.querySelectorAll('#chal-items-body tr')[challanItems.findIndex(i=>i.id===id)]?.querySelectorAll('input')[7];
+    if(rateInput){rateInput.value=bike.price;rateInput.classList.add('auto-filled');setTimeout(()=>rateInput.classList.remove('auto-filled'),3000);}
+  }
+  renderChallanTotals();
+}
+
+function challanLookupByChassis(id){
+  const it=challanItems.find(i=>i.id===id);
+  if(!it)return;
+  const val=(it.chassis||'').trim().toLowerCase();
+  if(val.length<3)return;
+  const match=stock.find(s=>s.chassisno&&s.chassisno.toLowerCase().includes(val)&&s.status!=='out');
+  if(match)autoFillChallanItemFromStock(id,match);
+}
+
+function challanLookupByEngine(id){
+  const it=challanItems.find(i=>i.id===id);
+  if(!it)return;
+  const val=(it.engine||'').trim().toLowerCase();
+  if(val.length<3)return;
+  const match=stock.find(s=>s.engineno&&s.engineno.toLowerCase().includes(val)&&s.status!=='out');
+  if(match)autoFillChallanItemFromStock(id,match);
+}
+
+function onChallanModelChange(id,isBlur){
+  const it=challanItems.find(i=>i.id===id);
+  if(!it)return;
+  if(isBlur){
+    const canonical=findModelCaseInsensitive(it.model);
+    if(canonical){it.model=canonical;challanSetField(id,'model',canonical,false);}
+  }
+  const model=findModelCaseInsensitive(it.model)||it.model;
+  if(!model)return;
+  // If exactly one available bike in stock matches this model, auto-fill everything not yet set
+  if(!it.chassis&&!it.engine){
+    const available=stock.filter(s=>s.model===model&&s.status!=='out');
+    if(available.length===1)autoFillChallanItemFromStock(id,available[0]);
+  }
+}
+
+function renderChallanTotals(){
+  let subTotal=0,totalQty=0;
+  challanItems.forEach(it=>{
+    const amount=(Number(it.qty)||0)*(Number(it.rate)||0)-(Number(it.discount)||0);
+    subTotal+=amount;
+    totalQty+=Number(it.qty)||0;
+    const amtCell=document.getElementById('chal-amt-'+it.id);
+    if(amtCell)amtCell.textContent=fmt(amount.toFixed(2));
+  });
+  const vatPct=parseFloat(document.getElementById('c-vat')?.value)||0;
+  const taxable=subTotal;
+  const vatAmt=taxable*vatPct/100;
+  const total=taxable+vatAmt;
+  const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
+  set('chal-total-qty',fmt(totalQty));
+  set('chal-subtotal',fmt(subTotal.toFixed(2)));
+  set('chal-t-sub',fmt(subTotal.toFixed(2)));
+  set('chal-t-taxable',fmt(taxable.toFixed(2)));
+  set('chal-t-vat-lbl','VAT @ '+vatPct+'%:');
+  set('chal-t-vat',fmt(vatAmt.toFixed(2)));
+  set('chal-t-total',fmt(total.toFixed(2)));
+  const wordsEl=document.getElementById('chal-words');
+  if(wordsEl)wordsEl.textContent=total>0?(numToWordsIndian(total)+' Rupees Only'):'—';
+}
+
+function nextChallanNo(){
+  let max=0;
+  (challans||[]).forEach(c=>{
+    const m=String(c.no||'').match(/(\d+)\s*$/);
+    if(m){const n=parseInt(m[1],10);if(n>max)max=n;}
+  });
+  return 'DC-'+String(max+1).padStart(4,'0');
+}
+
+function clearChallanForm(silent){
+  if(!silent&&!confirm('Challan form clear garne? (Sender details baaheki sabai khali huncha)'))return;
+  challanItems=[];
+  addChallanItem();
+  ['c-r-name','c-r-pan','c-r-city','c-r-address','c-ref','c-person','c-person-add','c-narration'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  const dateEl=document.getElementById('c-d-date');if(dateEl)dateEl.value=today();
+  const tDateEl=document.getElementById('c-t-date');if(tDateEl)tDateEl.value=today();
+  const vatEl=document.getElementById('c-vat');if(vatEl)vatEl.value='13';
+  const noEl=document.getElementById('c-no');if(noEl)noEl.value=nextChallanNo();
+  document.getElementById('challan-out-banner')?.classList.remove('visible');
+  renderChallanTotals();
+}
+
+function initChallanForm(){
+  if(challanItems.length===0)addChallanItem();
+  const noEl=document.getElementById('c-no');
+  if(noEl&&!noEl.value)noEl.value=nextChallanNo();
+  const dateEl=document.getElementById('c-d-date');
+  if(dateEl&&!dateEl.value)dateEl.value=today();
+  const tDateEl=document.getElementById('c-t-date');
+  if(tDateEl&&!tDateEl.value)tDateEl.value=today();
+  populateChallanModelDatalist();
+}
+
+function saveChallanPDF(){
+  const rName=document.getElementById('c-r-name').value.trim();
+  const no=document.getElementById('c-no').value.trim();
+  const date=document.getElementById('c-d-date').value;
+  let parts=[];
+  if(no)parts.push(no.replace(/\s+/g,'_'));
+  if(rName)parts.push(rName.replace(/\s+/g,'_'));
+  if(date)parts.push(date);
+  const filename=(parts.length?parts.join('_'):'Delivery_Challan')+'.pdf';
+  const orig=document.title;
+  document.title=filename;
+  window.print();
+  setTimeout(()=>{document.title=orig;},2000);
+}
+
+// ══════════════════════════════════════════════
+//  SAVE CHALLAN & MARK STOCK SOLD
+// ══════════════════════════════════════════════
+async function confirmChallanAndMarkSold(){
+  const rName=toTitleCase(document.getElementById('c-r-name').value.trim());
+  if(!rName){alert('Receiver naam raakhnus!');return;}
+
+  const validItems=challanItems.filter(it=>it.model && it.model.trim());
+  if(validItems.length===0){alert('Kaam ma least 1 item (Bike Model) raakhnus!');return;}
+
+  // Resolve stock match for each item
+  const resolved=validItems.map(it=>{
+    let bike=it.stockId?stock.find(s=>s.id===it.stockId&&s.status!=='out'):null;
+    if(!bike){
+      bike=stock.find(s=>s.status!=='out'&&(
+        (it.chassis&&s.chassisno&&s.chassisno===it.chassis)||
+        (it.engine&&s.engineno&&s.engineno===it.engine)
+      ));
+    }
+    if(!bike){
+      const model=findModelCaseInsensitive(it.model)||it.model;
+      bike=stock.find(s=>s.model===model&&s.status!=='out');
+    }
+    return {item:it,bike};
+  });
+
+  const matchedCount=resolved.filter(r=>r.bike).length;
+  const unmatchedCount=resolved.length-matchedCount;
+  let msg=`Challan save garne?\n\nReceiver: ${rName}\nItems: ${resolved.length} (${matchedCount} stock ma match bhayo`;
+  if(unmatchedCount)msg+=`, ${unmatchedCount} match bhayena — record matra huncha, stock update hudaina`;
+  msg+=')\n\nMatched bike(s) stock "Sold/Out" huncha!';
+  if(!confirm(msg))return;
+
+  const date=document.getElementById('c-d-date').value||today();
+  const challanNo=document.getElementById('c-no').value.trim()||nextChallanNo();
+
+  resolved.forEach(({item,bike})=>{
+    const amt=(Number(item.qty)||1)*(Number(item.rate)||(bike?bike.price:0)||0)-(Number(item.discount)||0);
+    if(bike){
+      bike.status='out';
+      bike.soldDate=date;
+    }
+    const saleObj={
+      cust:rName,
+      phone:document.getElementById('c-person').value.trim(),
+      addr:document.getElementById('c-r-address').value.trim(),
+      model:item.model,
+      bikeno:item.reg||(bike?bike.bikeno:'')||'',
+      colour:item.color||(bike?bike.colour:'')||'',
+      colorHex:bike?bike.colorHex:'#9e9e9e',
+      engineno:item.engine||(bike?bike.engineno:'')||'',
+      chassisno:item.chassis||(bike?bike.chassisno:'')||'',
+      amt,pay:'Cash',date,
+      notes:'Delivered via Delivery Challan '+challanNo,
+      stockId:bike?bike.id:null
+    };
+    sales.push(saleObj);
+  });
+
+  await dbSet('dah2-stock',stock);
+  await dbSet('dah2-sales',sales);
+
+  // Log the challan itself for record-keeping (upsert by challan no.)
+  const challanRecord={
+    id:Date.now(),
+    no:challanNo,date,
+    receiver:rName,
+    rPan:document.getElementById('c-r-pan').value.trim(),
+    rCity:document.getElementById('c-r-city').value.trim(),
+    rAddress:document.getElementById('c-r-address').value.trim(),
+    tDate:document.getElementById('c-t-date').value,
+    cRef:document.getElementById('c-ref').value.trim(),
+    cPerson:document.getElementById('c-person').value.trim(),
+    cPersonAdd:document.getElementById('c-person-add').value.trim(),
+    vatPct:parseFloat(document.getElementById('c-vat').value)||0,
+    narration:document.getElementById('c-narration').value.trim(),
+    items:resolved.map(({item,bike})=>({model:item.model,chassis:item.chassis,engine:item.engine,reg:item.reg,color:item.color,mfd:item.mfd,qty:item.qty,rate:item.rate,discount:item.discount,stockId:bike?bike.id:null})),
+    total:parseFloat(document.getElementById('chal-t-total').textContent.replace(/,/g,''))||0,
+    savedAt:new Date().toISOString()
+  };
+  const existingIdx=challans.findIndex(c=>c.no===challanNo);
+  if(existingIdx>-1){challanRecord.id=challans[existingIdx].id;challans[existingIdx]=challanRecord;}
+  else challans.push(challanRecord);
+  await dbSet('dah2-challans',challans);
+  renderChallanLedger();
+
+  const banner=document.getElementById('challan-out-banner');
+  banner.classList.add('visible');
+  document.getElementById('challan-out-msg').textContent=`✅ Challan ${challanNo} — ${rName} lai ${resolved.length} item deliver bhayo! Stock "Sold/Out" bhayo.`;
+
+  render();
+  toast('🎉 Challan saved! Stock auto updated ✓');
+}
+
+// ══════════════════════════════════════════════
+//  DELIVERY CHALLAN LEDGER
+// ══════════════════════════════════════════════
+function challanItemsSummary(c){
+  return (c.items||[]).map(it=>it.model).filter(Boolean).join(', ');
+}
+function challanTotalQty(c){
+  return (c.items||[]).reduce((a,it)=>a+(Number(it.qty)||0),0);
+}
+
+function renderChallanLedger(){
+  const body=document.getElementById('challan-ledger-body');
+  if(!body)return;
+  const totalEl=document.getElementById('challan-ledger-total');
+  const searchVal=(document.getElementById('challan-ledger-search')||{value:''}).value.toLowerCase();
+  let filtered=(challans||[]).filter(c=>{
+    if(!searchVal)return true;
+    return (c.no||'').toLowerCase().includes(searchVal)||
+      (c.receiver||'').toLowerCase().includes(searchVal)||
+      challanItemsSummary(c).toLowerCase().includes(searchVal);
+  });
+  if(!challans||!challans.length){
+    body.innerHTML='<tr><td colspan="8" class="lg-empty">No challans saved yet — fill the Delivery Challan form and click "Save Challan &amp; Mark Stock Sold"</td></tr>';
+    if(totalEl)totalEl.textContent='';
+    return;
+  }
+  const total=challans.reduce((a,c)=>a+(Number(c.total)||0),0);
+  const filteredTotal=filtered.reduce((a,c)=>a+(Number(c.total)||0),0);
+  if(totalEl){
+    if(filtered.length===challans.length) totalEl.textContent=`Total: Rs. ${fmt(total)} (${challans.length} challans)`;
+    else totalEl.textContent=`Showing ${filtered.length} of ${challans.length} — Rs. ${fmt(filteredTotal)}`;
+  }
+  if(!filtered.length){
+    body.innerHTML='<tr><td colspan="8" class="lg-empty">No challans match your search.</td></tr>';
+    return;
+  }
+  filtered=[...filtered].sort((a,b)=>dateSortKey(b.date).localeCompare(dateSortKey(a.date)));
+  body.innerHTML=filtered.map((c,i)=>`
+    <tr>
+      <td style="text-align:center;font-weight:600;color:var(--gray-400)">${i+1}</td>
+      <td>${escapeHtml(c.no)||'—'}</td>
+      <td>${escapeHtml(c.date)||'—'}</td>
+      <td><strong>${escapeHtml(c.receiver)||'—'}</strong></td>
+      <td>${escapeHtml(challanItemsSummary(c))||'—'}</td>
+      <td style="text-align:center">${challanTotalQty(c)}</td>
+      <td class="lg-amt">Rs. ${fmt(Number(c.total)||0)}</td>
+      <td style="text-align:center;white-space:nowrap">
+        <button class="btn btn-secondary" style="padding:3px 8px;font-size:11px" onclick="loadChallanFromLedger(${c.id})">📄 Load</button>
+        <button class="btn btn-red" style="padding:3px 8px;font-size:11px" onclick="deleteChallanFromLedger(${c.id})">🗑️</button>
+      </td>
+    </tr>`).join('');
+}
+
+function loadChallanFromLedger(id){
+  const c=challans.find(x=>x.id===id);
+  if(!c)return;
+  showPage('challan',document.querySelector('.nav-item[data-page="challan"]'));
+  const set=(elId,val)=>{const el=document.getElementById(elId);if(el)el.value=val||'';};
+  set('c-no',c.no); set('c-d-date',c.date); set('c-t-date',c.tDate);
+  set('c-r-name',c.receiver); set('c-r-pan',c.rPan); set('c-r-city',c.rCity); set('c-r-address',c.rAddress);
+  set('c-ref',c.cRef); set('c-person',c.cPerson); set('c-person-add',c.cPersonAdd);
+  set('c-vat',c.vatPct!=null?c.vatPct:13); set('c-narration',c.narration);
+  challanItems=(c.items&&c.items.length?c.items:[{}]).map(it=>newChallanItem(it));
+  renderChallanItems();
+  toast('📂 Challan loaded — edit and click "Save Challan" to update');
+}
+
+function deleteChallanFromLedger(id){
+  if(!confirm('Delete this challan from the ledger? (Stock status change hudaina)'))return;
+  challans=challans.filter(c=>c.id!==id);
+  dbSet('dah2-challans',challans);
+  renderChallanLedger();
+  toast('🗑️ Challan deleted');
+}
+
+function exportChallanLedgerExcel(){
+  if(!challans||!challans.length){toast('⚠️ No challans to export');return;}
+  const sortedC=[...challans].sort((a,b)=>dateSortKey(b.date).localeCompare(dateSortKey(a.date)));
+  const data=[
+    ['S.N.','Challan No.','Date','Receiver','Item(s)','Qty','Amount (NPR)','Saved At'],
+    ...sortedC.map((c,i)=>[i+1,c.no,c.date,c.receiver,challanItemsSummary(c),challanTotalQty(c),Number(c.total)||0,c.savedAt])
+  ];
+  const ws=XLSX.utils.aoa_to_sheet(data);
+  ws['!cols']=[{wch:6},{wch:12},{wch:12},{wch:22},{wch:30},{wch:8},{wch:14},{wch:20}];
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'Challan Ledger');
+  XLSX.writeFile(wb,'challan-ledger-'+today()+'.xlsx');
+  toast('✅ Excel downloaded');
+}
+
+function printChallanLedger(){
+  if(!challans||!challans.length){toast('⚠️ No challans to print');return;}
+  const searchVal=(document.getElementById('challan-ledger-search')||{value:''}).value.toLowerCase();
+  let filtered=challans.filter(c=>{
+    if(!searchVal)return true;
+    return (c.no||'').toLowerCase().includes(searchVal)||(c.receiver||'').toLowerCase().includes(searchVal)||challanItemsSummary(c).toLowerCase().includes(searchVal);
+  });
+  const total=filtered.reduce((a,c)=>a+(Number(c.total)||0),0);
+  const meta=document.getElementById('challan-ledger-print-meta');
+  if(meta)meta.textContent=`Printed on: ${new Date().toLocaleDateString('en-NP')} | Total: Rs. ${fmt(total)} | ${filtered.length} challans`;
+  filtered=[...filtered].sort((a,b)=>dateSortKey(b.date).localeCompare(dateSortKey(a.date)));
+  const tbody=document.getElementById('challan-ledger-print-body');
+  if(tbody)tbody.innerHTML=filtered.map((c,i)=>`
+    <tr style="background:${i%2===0?'#fff':'#f9fafb'}">
+      <td style="border:1px solid #ccc;padding:4px 7px">${i+1}</td>
+      <td style="border:1px solid #ccc;padding:4px 7px">${escapeHtml(c.no)||'—'}</td>
+      <td style="border:1px solid #ccc;padding:4px 7px">${escapeHtml(c.date)||'—'}</td>
+      <td style="border:1px solid #ccc;padding:4px 7px"><strong>${escapeHtml(c.receiver)||'—'}</strong></td>
+      <td style="border:1px solid #ccc;padding:4px 7px">${escapeHtml(challanItemsSummary(c))||'—'}</td>
+      <td style="border:1px solid #ccc;padding:4px 7px;text-align:center">${challanTotalQty(c)}</td>
+      <td style="border:1px solid #ccc;padding:4px 7px;text-align:right;font-weight:700;color:#C0392B">Rs. ${fmt(Number(c.total)||0)}</td>
+    </tr>`).join('');
+  const tfoot=document.getElementById('challan-ledger-print-foot');
+  if(tfoot)tfoot.innerHTML=`<tr style="background:#f3f4f6;font-weight:700"><td colspan="6" style="border:1px solid #ccc;padding:5px 7px;text-align:right">TOTAL</td><td style="border:1px solid #ccc;padding:5px 7px;text-align:right;color:#1a7a4a">Rs. ${fmt(total)}</td></tr>`;
+  document.querySelectorAll('.page-section').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-challan-ledger').classList.add('active');
+  window.print();
+}
+
 function bsTodayStr(){
   const bs=adToBS(new Date());
   if(!bs) return '';
@@ -4874,7 +5553,7 @@ function handleLogoUpload(e){
   const file=e.target.files[0];if(!file)return;
   const reader=new FileReader();
   reader.onload=ev=>{
-    [['logo-preview','logo-placeholder'],['logo-preview-q','logo-placeholder-q']].forEach(([pid,hid])=>{
+    [['logo-preview','logo-placeholder'],['logo-preview-q','logo-placeholder-q'],['logo-preview-c','logo-placeholder-c']].forEach(([pid,hid])=>{
       const prev=document.getElementById(pid),ph=document.getElementById(hid);
       if(!prev||!ph)return;
       prev.src=ev.target.result;prev.classList.add('visible');ph.style.display='none';
@@ -5104,7 +5783,7 @@ function loadLogo(){
   try{
     const l=localStorage.getItem('dah_logo');
     if(!l)return;
-    [['logo-preview','logo-placeholder'],['logo-preview-q','logo-placeholder-q']].forEach(([pid,hid])=>{
+    [['logo-preview','logo-placeholder'],['logo-preview-q','logo-placeholder-q'],['logo-preview-c','logo-placeholder-c']].forEach(([pid,hid])=>{
       const p=document.getElementById(pid),ph=document.getElementById(hid);
       if(!p||!ph)return;
       p.src=l;p.classList.add('visible');ph.style.display='none';
@@ -5278,7 +5957,7 @@ function saveQuotationPDF(){
 //  EXPORT / IMPORT
 // ══════════════════════════════════════════════
 function exportJSON(){
-  const d={stock,sales,bookings,receipts,vouchers,valuationSheets,exportedAt:new Date().toISOString()};
+  const d={stock,sales,bookings,receipts,vouchers,valuationSheets,challans,exportedAt:new Date().toISOString()};
   const blob=new Blob([JSON.stringify(d,null,2)],{type:'application/json'});
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='divya-auto-hub-backup-'+today()+'.json';a.click();
   toast('JSON backup downloaded ✓');
@@ -5291,7 +5970,7 @@ async function handleJSONImport(e){
     try{
       const d=JSON.parse(ev.target.result);
       if(!d.stock&&!d.sales&&!d.bookings){alert('Invalid backup file!');return;}
-      if(!confirm(`Import garne?\nStock: ${(d.stock||[]).length} bikes\nSales: ${(d.sales||[]).length}\nBookings: ${(d.bookings||[]).length}\nReceipts: ${(d.receipts||[]).length}\nVouchers: ${(d.vouchers||[]).length}`))return;
+      if(!confirm(`Import garne?\nStock: ${(d.stock||[]).length} bikes\nSales: ${(d.sales||[]).length}\nBookings: ${(d.bookings||[]).length}\nReceipts: ${(d.receipts||[]).length}\nVouchers: ${(d.vouchers||[]).length}\nChallans: ${(d.challans||[]).length}`))return;
       suppressAutoBackup=true;
       if(d.stock){stock=d.stock;await dbSet('dah2-stock',stock);}
       if(d.sales){sales=d.sales;await dbSet('dah2-sales',sales);}
@@ -5299,8 +5978,9 @@ async function handleJSONImport(e){
       if(d.receipts){receipts=d.receipts;await dbSet('dah2-receipts',receipts);}
       if(d.vouchers){vouchers=d.vouchers;await dbSet('dah2-vouchers',vouchers);}
       if(d.valuationSheets){valuationSheets=d.valuationSheets;await dbSet('dah2-valuation-sheets',valuationSheets);}
+      if(d.challans){challans=d.challans;await dbSet('dah2-challans',challans);}
       suppressAutoBackup=false;
-      populateModelSelects();render();renderReceiptLedger();renderVoucherLedger();renderValuationLedger();closeModal('dataio');
+      populateModelSelects();render();renderReceiptLedger();renderVoucherLedger();renderValuationLedger();renderChallanLedger();closeModal('dataio');
       toast('Import successful ✓');
     }catch(err){alert('JSON parse error: '+err.message);}
   };
@@ -5344,7 +6024,7 @@ async function silentBackup(){
   if(!url)return;
   try{
     loadPurchases();
-    const payload={stock,sales,bookings,receipts,vouchers,valuationSheets,purchases,backedUpAt:new Date().toISOString()};
+    const payload={stock,sales,bookings,receipts,vouchers,valuationSheets,purchases,challans,backedUpAt:new Date().toISOString()};
     const res=await fetch(url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(payload)});
     const result=await res.json();
     if(result.status==='ok'){
@@ -5503,7 +6183,7 @@ async function backupToGoogleSheet(){
   const orig=btn.textContent;btn.textContent='⏳ Backing up...';btn.disabled=true;
   try{
     loadPurchases();
-    const payload={stock,sales,bookings,receipts,vouchers,valuationSheets,purchases,backedUpAt:new Date().toISOString()};
+    const payload={stock,sales,bookings,receipts,vouchers,valuationSheets,purchases,challans,backedUpAt:new Date().toISOString()};
     const res=await fetch(url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(payload)});
     const result=await res.json();
     if(result.status==='ok'){
@@ -5536,6 +6216,7 @@ async function restoreFromGoogleSheet(){
     if(data.receipts) receipts=data.receipts;
     if(data.vouchers) vouchers=data.vouchers;
     if(data.valuationSheets) valuationSheets=data.valuationSheets;
+    if(data.challans) challans=data.challans;
     if(data.purchases){ purchases=data.purchases; savePurchases(); }
     suppressAutoBackup=true;
     await dbSet('dah2-stock',stock);
@@ -5544,8 +6225,9 @@ async function restoreFromGoogleSheet(){
     if(data.receipts) await dbSet('dah2-receipts',receipts);
     if(data.vouchers) await dbSet('dah2-vouchers',vouchers);
     if(data.valuationSheets) await dbSet('dah2-valuation-sheets',valuationSheets);
+    if(data.challans) await dbSet('dah2-challans',challans);
     suppressAutoBackup=false;
-    populateModelSelects();render();renderReceiptLedger();renderVoucherLedger();renderValuationLedger();closeModal('dataio');
+    populateModelSelects();render();renderReceiptLedger();renderVoucherLedger();renderValuationLedger();renderChallanLedger();closeModal('dataio');
     toast('Google Sheet bata restore successful ✓');
   }catch(err){
     alert('Restore failed: '+err.message);
