@@ -270,6 +270,7 @@ tr:hover td { background: var(--gray-50); }
 /* TOAST */
 .toast { position: fixed; bottom: 24px; right: 24px; background: var(--gray-900); color: #fff; padding: 10px 16px; border-radius: var(--radius); font-size: 13px; font-weight: 500; box-shadow: var(--shadow-md); z-index: 999; transform: translateY(80px); opacity: 0; transition: all 0.25s; pointer-events: none; }
 .toast.show { transform: translateY(0); opacity: 1; }
+@media print { .toast { display: none !important; } }
 
 /* ── MOBILE RESPONSIVE ── */
 .mob-topbar { display: none; }
@@ -485,6 +486,7 @@ select.field-input { cursor: pointer; }
 .chal-items-table .chal-num { text-align: right; }
 .chal-items-table .chal-rm { background: none; border: none; color: var(--red); font-size: 15px; cursor: pointer; padding: 0 4px; }
 .chal-items-table tfoot td { font-weight: 800; background: #fafafa; }
+.chal-items-table .chal-print-val { display: none; }
 .chal-add-row { margin-top: 8px; }
 .chal-totals { display: flex; justify-content: flex-end; margin-top: 8px; }
 .chal-totals table { font-size: 12.5px; }
@@ -655,9 +657,13 @@ select.field-input { cursor: pointer; }
   #quotation-doc input, #quotation-doc select,
   #test-ride-doc input, #test-ride-doc select,
   #challan-doc input, #challan-doc select { font-weight: 700 !important; color: #000 !important; border-bottom: 1px solid #555 !important; }
-  #challan-doc .chal-items-table input { border-bottom: none !important; }
-  #challan-doc .chal-items-table td.chal-col-num input { font-weight: 800 !important; font-size: 10px !important; letter-spacing: -0.3px !important; overflow: visible !important; text-overflow: clip !important; }
-  #challan-doc .chal-items-table th, #challan-doc .chal-items-table td { white-space: nowrap; }
+  #challan-doc .chal-items-table { table-layout: auto !important; }
+  #challan-doc .chal-items-table th, #challan-doc .chal-items-table td { width: auto !important; min-width: 0 !important; }
+  #challan-doc .chal-items-table input { display: none !important; }
+  #challan-doc .chal-items-table .chal-print-val { display: inline-block !important; white-space: normal !important; word-break: break-word !important; font-weight: 700; color: #000; }
+  #challan-doc .chal-items-table td.chal-col-num .chal-print-val { font-weight: 800 !important; font-size: 10px !important; letter-spacing: -0.3px !important; word-break: break-all !important; }
+  #challan-doc .chal-items-table .chal-print-val.chal-num { display: block !important; text-align: right; }
+  #challan-doc .chal-items-table th, #challan-doc .chal-items-table td { white-space: normal !important; }
   #delivery-doc .field-label, #quotation-doc .field-label, #test-ride-doc .field-label, #challan-doc .field-label,
   #delivery-doc .sig-label, #quotation-doc .sig-label, #test-ride-doc .sig-label, #challan-doc .sig-label { font-weight: 800 !important; color: #000 !important; }
   #delivery-doc .terms-list li, #quotation-doc .terms-list li,
@@ -1428,18 +1434,18 @@ try{
             <table class="chal-items-table">
               <thead>
                 <tr>
-                  <th style="width:18px">Sr</th>
-                  <th style="min-width:90px">Bike Model</th>
-                  <th style="min-width:132px">Chassis No.</th>
-                  <th style="min-width:132px">Engine No.</th>
-                  <th style="min-width:120px">Reg. No.</th>
-                  <th style="width:95px">Color</th>
-                  <th style="width:36px">MFD Yr</th>
-                  <th style="width:28px">Qty</th>
-                  <th style="width:52px">Rate</th>
-                  <th style="width:42px">Disc.</th>
-                  <th style="width:58px">Amount</th>
-                  <th style="width:14px"></th>
+                  <th style="width:16px">Sr</th>
+                  <th style="min-width:80px">Bike Model</th>
+                  <th style="min-width:155px">Chassis No.</th>
+                  <th style="min-width:155px">Engine No.</th>
+                  <th style="min-width:125px">Reg. No.</th>
+                  <th style="width:75px">Color</th>
+                  <th style="width:32px">MFD Yr</th>
+                  <th style="width:24px">Qty</th>
+                  <th style="width:46px">Rate</th>
+                  <th style="width:36px">Disc.</th>
+                  <th style="width:52px">Amount</th>
+                  <th style="width:12px"></th>
                 </tr>
               </thead>
               <tbody id="chal-items-body"></tbody>
@@ -5178,21 +5184,30 @@ function renderChallanItems(){
     const tr=document.createElement('tr');
     tr.innerHTML=`
       <td class="chal-num">${idx+1}</td>
-      <td><input list="chal-model-dl" autocomplete="off" value="${escAttr(it.model)}" placeholder="Model" oninput="updateChallanItem(${it.id},'model',this.value);onChallanModelChange(${it.id},false)" onblur="onChallanModelChange(${it.id},true)"></td>
-      <td class="chal-col-num"><input list="chal-chassis-dl" value="${escAttr(it.chassis)}" placeholder="Type or select..." autocomplete="off" oninput="updateChallanItem(${it.id},'chassis',this.value);challanLookupByChassis(${it.id})" onchange="challanLookupByChassis(${it.id})"></td>
-      <td class="chal-col-num"><input list="chal-engine-dl" value="${escAttr(it.engine)}" placeholder="Type or select..." autocomplete="off" oninput="updateChallanItem(${it.id},'engine',this.value);challanLookupByEngine(${it.id})" onchange="challanLookupByEngine(${it.id})"></td>
-      <td class="chal-col-num"><input value="${escAttr(it.reg)}" oninput="updateChallanItem(${it.id},'reg',this.value)"></td>
-      <td class="chal-col-num"><input value="${escAttr(it.color)}" oninput="updateChallanItem(${it.id},'color',this.value)"></td>
-      <td><input value="${escAttr(it.mfd)}" oninput="updateChallanItem(${it.id},'mfd',this.value)"></td>
-      <td><input type="number" step="0.01" value="${it.qty}" class="chal-num" oninput="updateChallanItem(${it.id},'qty',this.value)"></td>
-      <td><input type="number" step="0.01" value="${it.rate}" class="chal-num" oninput="updateChallanItem(${it.id},'rate',this.value)"></td>
-      <td><input type="number" step="0.01" value="${it.discount}" class="chal-num" oninput="updateChallanItem(${it.id},'discount',this.value)"></td>
+      <td><input list="chal-model-dl" autocomplete="off" value="${escAttr(it.model)}" placeholder="Model" oninput="updateChallanItem(${it.id},'model',this.value);onChallanModelChange(${it.id},false)" onblur="onChallanModelChange(${it.id},true)"><span class="chal-print-val">${escHtml(it.model)}</span></td>
+      <td class="chal-col-num"><input list="chal-chassis-dl" value="${escAttr(it.chassis)}" placeholder="Type or select..." autocomplete="off" oninput="updateChallanItem(${it.id},'chassis',this.value);challanLookupByChassis(${it.id})" onchange="challanLookupByChassis(${it.id})"><span class="chal-print-val">${escHtml(it.chassis)}</span></td>
+      <td class="chal-col-num"><input list="chal-engine-dl" value="${escAttr(it.engine)}" placeholder="Type or select..." autocomplete="off" oninput="updateChallanItem(${it.id},'engine',this.value);challanLookupByEngine(${it.id})" onchange="challanLookupByEngine(${it.id})"><span class="chal-print-val">${escHtml(it.engine)}</span></td>
+      <td class="chal-col-num"><input value="${escAttr(it.reg)}" oninput="updateChallanItem(${it.id},'reg',this.value)"><span class="chal-print-val">${escHtml(it.reg)}</span></td>
+      <td class="chal-col-num"><input value="${escAttr(it.color)}" oninput="updateChallanItem(${it.id},'color',this.value)"><span class="chal-print-val">${escHtml(it.color)}</span></td>
+      <td><input value="${escAttr(it.mfd)}" oninput="updateChallanItem(${it.id},'mfd',this.value)"><span class="chal-print-val">${escHtml(it.mfd)}</span></td>
+      <td><input type="number" step="0.01" value="${it.qty}" class="chal-num" oninput="updateChallanItem(${it.id},'qty',this.value)"><span class="chal-print-val chal-num">${escHtml(it.qty)}</span></td>
+      <td><input type="number" step="0.01" value="${it.rate}" class="chal-num" oninput="updateChallanItem(${it.id},'rate',this.value)"><span class="chal-print-val chal-num">${escHtml(it.rate)}</span></td>
+      <td><input type="number" step="0.01" value="${it.discount}" class="chal-num" oninput="updateChallanItem(${it.id},'discount',this.value)"><span class="chal-print-val chal-num">${escHtml(it.discount)}</span></td>
       <td class="chal-num" id="chal-amt-${it.id}">0.00</td>
       <td><button class="chal-rm" title="Remove" onclick="removeChallanItem(${it.id})">&times;</button></td>
     `;
     body.appendChild(tr);
   });
   renderChallanTotals();
+}
+if(!window._chalPrintSyncBound){
+  window._chalPrintSyncBound=true;
+  document.addEventListener('input', function(e){
+    if(e.target && e.target.matches && e.target.matches('#chal-items-body input')){
+      const sp=e.target.nextElementSibling;
+      if(sp && sp.classList && sp.classList.contains('chal-print-val')) sp.textContent=e.target.value;
+    }
+  });
 }
 
 function challanSetField(itemId,cell,value,highlight){
