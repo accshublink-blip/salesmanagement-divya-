@@ -615,7 +615,7 @@ select.field-input { cursor: pointer; }
   * { -webkit-print-color-adjust: exact !important; color-adjust: exact !important; print-color-adjust: exact !important; }
   /* hide chrome */
   .sidebar, .main > .topbar, .mob-topbar, .hamburger, .sidebar-overlay,
-  .delivery-controls, .quotation-controls,
+  .delivery-controls, .quotation-controls, .delivery-mode-toggle,
   .stock-lookup-banner, .stock-match-info, .stock-out-banner,
   .receipt-controls, .test-ride-controls,
   #deliver-btn-wrap { display: none !important; }
@@ -929,9 +929,14 @@ try{
               <option value="reserved">Reserved</option>
               <option value="out">Sold/Out (history)</option>
             </select>
+            <select id="location-filter" class="btn btn-secondary" style="padding:6px 10px;font-size:12px" onchange="renderStock()">
+              <option value="">All Locations</option>
+              <option value="Divya Auto Hub">📍 Divya Auto Hub</option>
+              <option value="NT Auto Hub">📍 NT Auto Hub</option>
+            </select>
           </div>
         </div>
-        <div style="font-size:11px;color:var(--gray-400);padding:0 16px 6px">Sold/Out bikes list ma default ma dekhindaina — herna maathi ko dropdown bata "Sold/Out (history)" select garnus.</div>
+        <div style="font-size:11px;color:var(--gray-400);padding:0 16px 6px">Sold/Out bikes list ma default ma dekhindaina — herna maathi ko dropdown bata "Sold/Out (history)" select garnus. Transfer vaeko bike stock ma "In Stock" nai dekhincha, tara tyo bike ko showroom herna "Location" dropdown/column use garnus.</div>
         <div class="tbl-wrap">
           <table>
             <thead>
@@ -945,6 +950,7 @@ try{
                 <th>Invoice No.</th>
                 <th>Price (NPR)</th>
                 <th>Status</th>
+                <th>Location</th>
                 <th>Days in Stock</th>
                 <th>Actions</th>
               </tr>
@@ -1124,6 +1130,16 @@ try{
           <button class="btn btn-red" onclick="window.print()">🖨️ Print</button>
         </div>
 
+        <!-- DELIVERY / STOCK TRANSFER MODE TOGGLE -->
+        <div class="delivery-mode-toggle" style="display:flex;gap:10px;margin-bottom:14px">
+          <label id="mode-label-delivery" style="display:flex;align-items:center;gap:6px;padding:9px 18px;border:2px solid var(--green-dark,#1a7a4a);border-radius:8px;cursor:pointer;font-weight:700;font-size:13px;color:var(--green-dark,#1a7a4a);background:rgba(26,122,74,0.06)">
+            <input type="radio" name="delivery-mode" id="mode-delivery" value="delivery" checked onchange="setDeliveryMode('delivery')"> 🚚 Mark as Delivery
+          </label>
+          <label id="mode-label-transfer" style="display:flex;align-items:center;gap:6px;padding:9px 18px;border:2px solid var(--gray-300,#ccc);border-radius:8px;cursor:pointer;font-weight:700;font-size:13px;color:var(--gray-500,#777)">
+            <input type="radio" name="delivery-mode" id="mode-transfer" value="transfer" onchange="setDeliveryMode('transfer')"> 🔁 Stock Transfer
+          </label>
+        </div>
+
         <!-- STOCK LOOKUP BANNER -->
         <div class="stock-lookup-banner">
           <svg width="20" height="20" fill="none" stroke="var(--green-dark)" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
@@ -1163,7 +1179,7 @@ try{
             </div>
           </div>
 
-          <div class="doc-title">Bike Delivery Sheet</div>
+          <div class="doc-title" id="delivery-doc-title">Bike Delivery Sheet</div>
 
           <!-- COMPANY DETAILS -->
           <div class="doc-section">
@@ -1177,7 +1193,7 @@ try{
           </div>
 
           <!-- CUSTOMER DETAILS -->
-          <div class="doc-section">
+          <div class="doc-section" id="customer-details-section">
             <div class="doc-section-title">Customer Details</div>
             <div class="field-grid two-col">
               <div class="field-row"><span class="field-label">Customer Name:</span><input class="field-input" id="d-cust-name" placeholder="Full Name" oninput="syncAckName()"></div>
@@ -1186,6 +1202,23 @@ try{
               <div class="field-row"><span class="field-label">Municipality:</span><input class="field-input" id="d-cust-muni" placeholder="Type municipality..." autocomplete="off"></div>
               <div class="field-row" style="grid-column:1/-1"><span class="field-label">Address:</span><input class="field-input" id="d-cust-addr" placeholder="City / Location"></div>
               <div class="field-row"><span class="field-label narrow">Email:</span><input class="field-input" placeholder="(optional)"></div>
+            </div>
+          </div>
+
+          <!-- TRANSFER DETAILS (Stock Transfer mode only) -->
+          <div class="doc-section" id="transfer-details-section" style="display:none">
+            <div class="doc-section-title">Transfer Details</div>
+            <div class="field-grid two-col">
+              <div class="field-row"><span class="field-label">To Showroom:</span>
+                <select class="field-input" id="d-transfer-to" onchange="updateTransferToDisplay()">
+                  <option value="">Select showroom...</option>
+                  <option value="NT Auto Hub">NT Auto Hub</option>
+                  <option value="Divya Auto Hub">Divya Auto Hub</option>
+                </select>
+              </div>
+              <div class="field-row"><span class="field-label">Transferred By:</span><input class="field-input" id="d-transfer-by" placeholder="Staff name"></div>
+              <div class="field-row"><span class="field-label">Received By:</span><input class="field-input" id="d-transfer-received-by" placeholder="Receiving staff name"></div>
+              <div class="field-row" style="grid-column:1/-1"><span class="field-label">Remarks:</span><input class="field-input" id="d-transfer-remarks" placeholder="(optional)"></div>
             </div>
           </div>
 
@@ -1217,7 +1250,7 @@ try{
           </div>
 
           <!-- MODE OF PURCHASE -->
-          <div class="doc-section">
+          <div class="doc-section" id="mode-of-purchase-section">
             <div class="doc-section-title">Mode of Purchase</div>
             <div class="mode-row">
               <div class="mode-item"><input type="checkbox" id="d-mode-cash"><label for="d-mode-cash" style="font-weight:600">Cash</label><span style="color:#888;font-size:11px;margin-left:2px">Rs.</span><input class="mode-detail" placeholder="Amount"></div>
@@ -1240,17 +1273,17 @@ try{
           </div>
 
           <!-- ACK -->
-          <div class="doc-section">
-            <div class="doc-section-title">Acknowledgment by Customer</div>
-            <div class="ack-box">
+          <div class="doc-section" id="ack-section">
+            <div class="doc-section-title" id="ack-section-title">Acknowledgment by Customer</div>
+            <div class="ack-box" id="ack-text">
               I, Mr./Ms. <input class="ack-inline" id="d-ack-name" placeholder="Customer Name">, confirm that I have received the bike in good condition along with all agreed accessories.
             </div>
           </div>
 
           <!-- SIGNATURES -->
           <div class="sig-row">
-            <div class="sig-block"><div class="sig-line"></div><div class="sig-label">Customer Signature</div></div>
-            <div class="sig-block"><div class="sig-line"></div><div class="sig-label">Sales Representative Signature</div></div>
+            <div class="sig-block"><div class="sig-line"></div><div class="sig-label" id="sig-label-1">Customer Signature</div></div>
+            <div class="sig-block"><div class="sig-line"></div><div class="sig-label" id="sig-label-2">Sales Representative Signature</div></div>
             <div class="sig-block"><div class="sig-line"></div><div class="sig-label">Authorized Stamp</div></div>
           </div>
 
@@ -1261,7 +1294,7 @@ try{
         <div style="margin-top:16px;display:flex;gap:10px;justify-content:flex-end" id="deliver-btn-wrap">
           <button class="btn btn-primary" style="background:linear-gradient(135deg,#1a7a4a,#2ecc71);font-size:14px;padding:10px 22px" onclick="confirmDeliverAndMarkSold()" id="deliver-btn">
             <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
-            🚀 Deliver & Mark Stock Sold
+            <span id="deliver-btn-label">🚀 Deliver & Mark Stock Sold</span>
           </button>
         </div>
 
@@ -2929,7 +2962,7 @@ const CAT_MAP = {
   'Dominar 400 ABS BS6':'Adventure','Chetak 3501':'Electric'
 };
 
-let stock = [], sales = [], bookings = [], receipts = [], vouchers = [];
+let stock = [], sales = [], bookings = [], receipts = [], vouchers = [], transfers = [];
 let editStockId = null, editSaleId = null, editBookingId = null;
 let currentPage = 'stock';
 let deliveryStockMatch = null; // currently matched stock item for delivery
@@ -3133,7 +3166,7 @@ let suppressAutoBackup=false;
 async function dbSet(k,v) {
   try {
     localStorage.setItem(k,JSON.stringify(v));
-    if(!suppressAutoBackup&&(k==='dah2-stock'||k==='dah2-sales'||k==='dah2-bookings'||k==='dah2-receipts'||k==='dah2-vouchers')){
+    if(!suppressAutoBackup&&(k==='dah2-stock'||k==='dah2-sales'||k==='dah2-bookings'||k==='dah2-receipts'||k==='dah2-vouchers'||k==='dah2-transfers')){
       scheduleAutoBackup();
       scheduleFirebaseSync();
     }
@@ -3152,7 +3185,7 @@ async function dbSet(k,v) {
 //  ☁️ SUPABASE CLOUD SYNC (automatic, cross-device)
 // ══════════════════════════════════════════════
 const SYNC_TABLE='dah_sync';
-const SYNC_KEYS=['dah2-stock','dah2-sales','dah2-bookings','dah2-receipts','dah2-vouchers','dah2-valuation-sheets','dah2-purchases','dah2-payable-ledger'];
+const SYNC_KEYS=['dah2-stock','dah2-sales','dah2-bookings','dah2-receipts','dah2-vouchers','dah2-valuation-sheets','dah2-purchases','dah2-payable-ledger','dah2-transfers'];
 let cloudPushTimer=null;
 const cloudPushQueue={};
 
@@ -3219,11 +3252,13 @@ async function manualSyncNow(){
   const ok=await cloudPullAll();
   if(ok){
     stock=await dbGet('dah2-stock')||[];
+    migrateStockLocations();
     sales=await dbGet('dah2-sales')||[];
     bookings=await dbGet('dah2-bookings')||[];
     receipts=await dbGet('dah2-receipts')||[];
     vouchers=await dbGet('dah2-vouchers')||[];
     valuationSheets=await dbGet('dah2-valuation-sheets')||[];
+    transfers=await dbGet('dah2-transfers')||[];
     if(typeof loadPurchases==='function')loadPurchases();
     populateModelSelects();render();renderReceiptLedger();renderVoucherLedger();
     if(typeof renderValuationLedger==='function')renderValuationLedger();
@@ -3350,8 +3385,17 @@ function monthLabel(ym){
   return (months[m]||('Month '+ym.slice(5,7)))+' '+y;
 }
 
-function statusBadge(s){
-  if(s==='out') return '<span class="badge badge-red">Sold/Out</span>';
+function locationBadge(loc){
+  const l=loc||'Divya Auto Hub';
+  if(l==='Divya Auto Hub') return `<span class="badge" style="background:#eef1f5;color:#555">🏠 ${l}</span>`;
+  return `<span class="badge" style="background:#0b2d5c;color:#fff">📍 ${l}</span>`;
+}
+
+function statusBadge(s,transferType,transferTo){
+  if(s==='out'){
+    if(transferType==='transfer') return `<span class="badge badge-blue" style="background:#0b2d5c;color:#fff">🔁 Transferred${transferTo?' → '+transferTo:''}</span>`;
+    return '<span class="badge badge-red">Sold/Out</span>';
+  }
   if(s==='reserved') return '<span class="badge badge-amber">Reserved</span>';
   return '<span class="badge badge-green">In Stock</span>';
 }
@@ -3368,10 +3412,12 @@ function stockDaysBadge(pd,status){
 // ── INIT ──
 async function init() {
   stock = await dbGet('dah2-stock') || getDefaultStock();
+  if(migrateStockLocations()) await dbSet('dah2-stock',stock);
   sales = await dbGet('dah2-sales') || [];
   bookings = await dbGet('dah2-bookings') || [];
   receipts = await dbGet('dah2-receipts') || [];
   vouchers = await dbGet('dah2-vouchers') || [];
+  transfers = await dbGet('dah2-transfers') || [];
   populateModelSelects();
   initAllDistrictMuniSelects();
   render();
@@ -3393,6 +3439,22 @@ async function init() {
   if(cvNoEl && !cvNoEl.value) cvNoEl.value=nextVoucherNo('cash');
   const chvNoEl=document.getElementById('chv-no');
   if(chvNoEl && !chvNoEl.value) chvNoEl.value=nextVoucherNo('cheque');
+}
+
+// One-time migration: older versions marked a transferred bike's status as
+// 'out' (same as sold). Now a transferred bike stays "In Stock" — it's just
+// at a different showroom — tracked via the `location` field instead.
+function migrateStockLocations(){
+  let changed=false;
+  stock.forEach(s=>{
+    if(!s.location){ s.location='Divya Auto Hub'; changed=true; }
+    if(s.status==='out' && s.transferType==='transfer' && s.transferTo){
+      s.location=s.transferTo;
+      s.status='in';
+      changed=true;
+    }
+  });
+  return changed;
 }
 
 function getDefaultStock(){
@@ -3432,6 +3494,7 @@ function render(){renderMetrics();renderAlerts();renderStock();renderSales();ren
 
 function renderMetrics(){
   const inStock=stock.filter(s=>s.status!=='out').length;
+  const ntCount=stock.filter(s=>s.status!=='out'&&(s.location||'Divya Auto Hub')==='NT Auto Hub').length;
   const totalRev=sales.reduce((a,s)=>a+Number(s.amt),0);
   const models=new Set(stock.map(s=>s.model)).size;
   const reserved=stock.filter(s=>s.status==='reserved').length;
@@ -3443,7 +3506,7 @@ function renderMetrics(){
     return Math.floor((today_-new Date(s.purchasedate))/(1000*60*60*24))>=35;
   }).length;
   document.getElementById('metrics-grid').innerHTML=`
-    <div class="metric-card"><div class="metric-label">Bikes Available</div><div class="metric-val green">${inStock}</div><div class="metric-sub">${models} models</div></div>
+    <div class="metric-card"><div class="metric-label">Bikes Available</div><div class="metric-val green">${inStock}</div><div class="metric-sub">${models} models · ${ntCount} at NT Auto Hub</div></div>
     <div class="metric-card"><div class="metric-label">Total Sales</div><div class="metric-val blue">${sales.length}</div><div class="metric-sub">All time</div></div>
     <div class="metric-card"><div class="metric-label">Revenue (NPR)</div><div class="metric-val green">${fmt(totalRev)}</div><div class="metric-sub">Total</div></div>
     <div class="metric-card"><div class="metric-label">Reserved</div><div class="metric-val amber">${reserved}</div><div class="metric-sub">Awaiting delivery</div></div>
@@ -3484,14 +3547,16 @@ function toggleGroup(gid){
 function renderStock(){
   const q=(document.getElementById('stock-search').value||'').toLowerCase();
   const f=document.getElementById('stock-filter').value;
+  const locF=document.getElementById('location-filter').value;
   let rows=stock.filter(s=>{
     const match=!q||(s.model+s.colour+s.bikeno+s.engineno+s.chassisno+(s.batteryno||'')+(s.invoiceno||'')).toLowerCase().includes(q);
     const st=s.status||'in';
     const fMatch=f?((f==='in'&&st==='in')||(f==='reserved'&&st==='reserved')||(f==='out'&&st==='out')):st!=='out';
-    return match&&fMatch;
+    const locMatch=!locF||(s.location||'Divya Auto Hub')===locF;
+    return match&&fMatch&&locMatch;
   });
   const tbody=document.getElementById('stock-body');
-  if(!rows.length){tbody.innerHTML='<tr><td colspan="11"><div class="empty"><p>No bikes found</p></div></td></tr>';return;}
+  if(!rows.length){tbody.innerHTML='<tr><td colspan="12"><div class="empty"><p>No bikes found</p></div></td></tr>';return;}
   const groups={};
   rows.forEach(s=>{if(!groups[s.model])groups[s.model]={cat:s.cat,price:s.price,bikes:[]};groups[s.model].bikes.push(s);});
   let html='';
@@ -3506,6 +3571,7 @@ function renderStock(){
       <td>NPR ${fmt(g.price)}</td>
       <td><span class="badge ${grpStatus}">${grpLabel}</span></td>
       <td></td>
+      <td></td>
       <td><button class="btn btn-primary btn-sm" onclick="addBikeToModel(event,'${model}')"><svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg> Add</button></td>
     </tr>`;
     g.bikes.forEach(s=>{
@@ -3518,7 +3584,8 @@ function renderStock(){
         <td><span class="mono">${s.batteryno||'—'}</span></td>
         <td><span class="mono">${s.invoiceno||'—'}</span></td>
         <td>NPR ${fmt(s.price)}</td>
-        <td>${statusBadge(s.status||'in')}</td>
+        <td>${statusBadge(s.status||'in',s.transferType,s.transferTo)}</td>
+        <td>${locationBadge(s.location)}</td>
         <td>${stockDaysBadge(s.purchasedate,s.status||'in')}</td>
         <td>
           <div class="action-btns">
@@ -3528,6 +3595,9 @@ function renderStock(){
             <button class="icon-btn icon-btn-quote" onclick="openQuotationFromStock(${s.id})" title="Create Quotation">
               <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/></svg>
             </button>
+            ${(s.location&&s.location!=='Divya Auto Hub'&&s.status!=='out')?`<button class="icon-btn" style="color:#0b2d5c" onclick="quickReturnStock(${s.id})" title="Return to Divya Auto Hub">
+              <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/></svg>
+            </button>`:''}
             <button class="icon-btn icon-btn-edit" onclick="editStock(${s.id})" title="Edit">
               <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
             </button>
@@ -4811,6 +4881,149 @@ async function confirmDeliverAndMarkSold(){
 }
 
 // ══════════════════════════════════════════════
+//  DELIVERY / STOCK TRANSFER MODE
+// ══════════════════════════════════════════════
+let deliveryMode='delivery';
+
+function setDeliveryMode(mode){
+  deliveryMode=mode;
+  const isTransfer=mode==='transfer';
+
+  document.getElementById('customer-details-section').style.display=isTransfer?'none':'';
+  document.getElementById('mode-of-purchase-section').style.display=isTransfer?'none':'';
+  document.getElementById('transfer-details-section').style.display=isTransfer?'':'none';
+  document.getElementById('delivery-doc-title').textContent=isTransfer?'Stock Transfer Note':'Bike Delivery Sheet';
+  if(isTransfer) updateTransferToDisplay(); 
+
+  const dLabel=document.getElementById('mode-label-delivery');
+  const tLabel=document.getElementById('mode-label-transfer');
+  if(isTransfer){
+    dLabel.style.borderColor='var(--gray-300,#ccc)';dLabel.style.color='var(--gray-500,#777)';dLabel.style.background='transparent';
+    tLabel.style.borderColor='#0b2d5c';tLabel.style.color='#0b2d5c';tLabel.style.background='rgba(11,45,92,0.06)';
+  } else {
+    dLabel.style.borderColor='var(--green-dark,#1a7a4a)';dLabel.style.color='var(--green-dark,#1a7a4a)';dLabel.style.background='rgba(26,122,74,0.06)';
+    tLabel.style.borderColor='var(--gray-300,#ccc)';tLabel.style.color='var(--gray-500,#777)';tLabel.style.background='transparent';
+  }
+
+  document.getElementById('ack-section-title').textContent=isTransfer?'Acknowledgment of Receipt':'Acknowledgment by Customer';
+  document.getElementById('ack-text').innerHTML=isTransfer
+    ? 'I, <input class="ack-inline" id="d-ack-name" placeholder="Received By">, confirm that the above bike has been received in good condition at the destination showroom.'
+    : 'I, Mr./Ms. <input class="ack-inline" id="d-ack-name" placeholder="Customer Name">, confirm that I have received the bike in good condition along with all agreed accessories.';
+
+  document.getElementById('sig-label-1').textContent=isTransfer?'Transferred By':'Customer Signature';
+  document.getElementById('sig-label-2').textContent=isTransfer?'Received By':'Sales Representative Signature';
+
+  const btn=document.getElementById('deliver-btn');
+  const label=document.getElementById('deliver-btn-label');
+  if(isTransfer){
+    btn.onclick=confirmStockTransfer;
+    btn.style.background='linear-gradient(135deg,#0b2d5c,#1565c0)';
+    label.textContent='🔁 Confirm Stock Transfer';
+  } else {
+    btn.onclick=confirmDeliverAndMarkSold;
+    btn.style.background='linear-gradient(135deg,#1a7a4a,#2ecc71)';
+    label.textContent='🚀 Deliver & Mark Stock Sold';
+  }
+}
+
+// Whichever showroom is picked in "To Showroom" auto-shows on the printed
+// document title itself, so the destination is clear at a glance (no need
+// to open the small dropdown to see where the bike is headed).
+function updateTransferToDisplay(){
+  const toShowroom=document.getElementById('d-transfer-to').value;
+  const titleEl=document.getElementById('delivery-doc-title');
+  if(!titleEl) return;
+  titleEl.textContent=toShowroom?('Stock Transfer Note — To: '+toShowroom):'Stock Transfer Note';
+}
+
+async function confirmStockTransfer(){
+  snapToCanonical(document.getElementById('d-bike-model'),getAllModelNames());
+  const model=document.getElementById('d-bike-model').value;
+  const engineno=document.getElementById('d-engine-no').value.trim();
+  const chassisno=document.getElementById('d-chassis-no').value.trim();
+  const toShowroom=document.getElementById('d-transfer-to').value;
+
+  if(!model){alert('Bike model select garus!');return;}
+  if(!toShowroom){alert('Kun showroom lai transfer garne, select garnus!');return;}
+
+  let item=deliveryStockMatch;
+  if(!item||item.status==='out'){
+    item=stock.find(s=>s.model===model&&s.status!=='out'&&(
+      (chassisno&&s.chassisno===chassisno)||(engineno&&s.engineno===engineno)
+    ));
+    if(!item) item=stock.find(s=>s.model===model&&s.status!=='out'&&(s.location||'Divya Auto Hub')!==toShowroom);
+    if(!item) item=stock.find(s=>s.model===model&&s.status!=='out');
+  }
+
+  if(!item){alert('Stock ma yo bike match bhaena. Chassis/Engine number check garnus.');return;}
+  if(item.status==='out'){toast('Yo bike already sold cha!');return;}
+  const fromShowroom=item.location||'Divya Auto Hub';
+  if(fromShowroom===toShowroom){alert(`Yo bike pahile dekhi "${toShowroom}" ma nai cha!`);return;}
+
+  const confirmMsg=`Stock Transfer confirm garne?\n\nModel: ${item.model}\nEngine: ${item.engineno||'—'}\nChassis: ${item.chassisno||'—'}\nFrom: ${fromShowroom}\nTo Showroom: ${toShowroom}\n\nYo garda stock "${fromShowroom}" ko list bata ghatera "${toShowroom}" ma sarincha!`;
+  if(!confirm(confirmMsg))return;
+
+  const date=today();
+  const transferredBy=document.getElementById('d-transfer-by').value.trim();
+  const receivedBy=document.getElementById('d-transfer-received-by').value.trim();
+  const remarks=document.getElementById('d-transfer-remarks').value.trim();
+
+  // Move stock to the new location. It stays "In Stock" overall (the dealership
+  // still owns it) — just at a different showroom, so it disappears from the
+  // source showroom's location filter and appears under the destination's.
+  item.location=toShowroom;
+  item.transferType='transfer';
+  item.transferTo=toShowroom;
+  item.transferDate=date;
+  await dbSet('dah2-stock',stock);
+
+  // Log the transfer (separate from sales — not revenue)
+  transfers.push({
+    id:'t'+Date.now(), stockId:item.id, model:item.model, colour:item.colour,
+    bikeno:item.bikeno, engineno:item.engineno, chassisno:item.chassisno,
+    fromShowroom, toShowroom, date, transferredBy, receivedBy, remarks, type:'transfer'
+  });
+  await dbSet('dah2-transfers',transfers);
+
+  const banner=document.getElementById('stock-out-banner');
+  banner.classList.add('visible');
+  document.getElementById('stock-out-msg').textContent=`🔁 ${model} — ${fromShowroom} bata ${toShowroom} ma transfer bhayo!`;
+
+  render();
+  deliveryStockMatch=null;
+  showStockMatchInfo(null);
+  toast('🔁 Stock Transfer complete ✓');
+}
+
+// Quick reverse of a transfer — used from the Stock table when a bike that was
+// sent to another showroom comes back to the main showroom (Divya Auto Hub).
+async function quickReturnStock(id){
+  const item=stock.find(s=>s.id===id);
+  if(!item){toast('Bike fela parena');return;}
+  const fromLoc=item.location||'Divya Auto Hub';
+  if(fromLoc==='Divya Auto Hub'){toast('Yo bike pahile dekhi Divya Auto Hub ma nai cha.');return;}
+  if(item.status==='out'){toast('Yo bike sold vaisakeko cha, return garna mildaina.');return;}
+  if(!confirm(`Stock Return confirm garne?\n\nModel: ${item.model}\nEngine: ${item.engineno||'—'}\nChassis: ${item.chassisno||'—'}\n\n"${fromLoc}" bata "Divya Auto Hub" ma farkincha.`))return;
+
+  const date=today();
+  transfers.push({
+    id:'t'+Date.now(), stockId:item.id, model:item.model, colour:item.colour,
+    bikeno:item.bikeno, engineno:item.engineno, chassisno:item.chassisno,
+    fromShowroom:fromLoc, toShowroom:'Divya Auto Hub', date, transferredBy:'', receivedBy:'', remarks:'Stock return', type:'return'
+  });
+  await dbSet('dah2-transfers',transfers);
+
+  item.location='Divya Auto Hub';
+  item.transferType='return';
+  item.transferTo='Divya Auto Hub';
+  item.transferDate=date;
+  await dbSet('dah2-stock',stock);
+
+  render();
+  toast(`↩ ${item.model} Divya Auto Hub ma return bhayo ✓`);
+}
+
+// ══════════════════════════════════════════════
 //  DELIVERY FORM HELPERS
 // ══════════════════════════════════════════════
 function syncAckName(){
@@ -4823,9 +5036,14 @@ function clearDeliveryForm(silent=false){
   ['d-cust-district','d-cust-muni'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   document.getElementById('d-bike-model').value='';
   document.querySelectorAll('#d-mode-cash,#d-mode-exchange,#d-mode-finance').forEach(el=>el.checked=false);
+  ['d-transfer-by','d-transfer-received-by','d-transfer-remarks'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  const transferToEl=document.getElementById('d-transfer-to');if(transferToEl)transferToEl.value='';
+  updateTransferToDisplay();
   document.getElementById('stock-match-info').classList.remove('visible');
   document.getElementById('stock-out-banner').classList.remove('visible');
   deliveryStockMatch=null;
+  const modeRadio=document.getElementById('mode-delivery');
+  if(modeRadio){modeRadio.checked=true;setDeliveryMode('delivery');}
 }
 
 function bsTodayStr(){
@@ -5319,7 +5537,7 @@ async function silentBackup(){
   if(!url)return;
   try{
     loadPurchases();
-    const payload={stock,sales,bookings,receipts,vouchers,valuationSheets,purchases,backedUpAt:new Date().toISOString()};
+    const payload={stock,sales,bookings,receipts,vouchers,valuationSheets,purchases,transfers,backedUpAt:new Date().toISOString()};
     const res=await fetch(url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(payload)});
     const result=await res.json();
     if(result.status==='ok'){
@@ -5411,6 +5629,7 @@ function attachRealtimeListeners(){
     const val=snap.val();
     if(val===null)return;
     stock=Array.isArray(val)?val:Object.values(val);
+    migrateStockLocations();
     localStorage.setItem('dah2-stock',JSON.stringify(stock));
     populateModelSelects();render();
   });
@@ -5449,6 +5668,12 @@ function attachRealtimeListeners(){
     localStorage.setItem('dah2-valuation-sheets',JSON.stringify(valuationSheets));
     renderValuationLedger();
   });
+  fbDb.ref('transfers').on('value',snap=>{
+    const val=snap.val();
+    if(val===null)return;
+    transfers=Array.isArray(val)?val:Object.values(val);
+    localStorage.setItem('dah2-transfers',JSON.stringify(transfers));
+  });
 }
 
 function scheduleFirebaseSync(){
@@ -5461,6 +5686,7 @@ function scheduleFirebaseSync(){
     fbDb.ref('receipts').set(receipts).catch(err=>console.warn('Firebase receipts sync failed',err));
     fbDb.ref('vouchers').set(vouchers).catch(err=>console.warn('Firebase vouchers sync failed',err));
     fbDb.ref('valuationSheets').set(valuationSheets).catch(err=>console.warn('Firebase valuation sync failed',err));
+    fbDb.ref('transfers').set(transfers).catch(err=>console.warn('Firebase transfers sync failed',err));
   },700);
 }
 
@@ -5478,7 +5704,7 @@ async function backupToGoogleSheet(){
   const orig=btn.textContent;btn.textContent='⏳ Backing up...';btn.disabled=true;
   try{
     loadPurchases();
-    const payload={stock,sales,bookings,receipts,vouchers,valuationSheets,purchases,backedUpAt:new Date().toISOString()};
+    const payload={stock,sales,bookings,receipts,vouchers,valuationSheets,purchases,transfers,backedUpAt:new Date().toISOString()};
     const res=await fetch(url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(payload)});
     const result=await res.json();
     if(result.status==='ok'){
@@ -5506,12 +5732,14 @@ async function restoreFromGoogleSheet(){
     const data=await res.json();
     if(data.status==='error'){alert('Restore error: '+data.message);return;}
     stock=(data.stock||[]).map(normalizeStockRow);
+    migrateStockLocations();
     sales=(data.sales||[]).map(normalizeSaleRow);
     bookings=(data.bookings||[]).map(normalizeBookingRow);
     if(data.receipts) receipts=data.receipts;
     if(data.vouchers) vouchers=data.vouchers;
     if(data.valuationSheets) valuationSheets=data.valuationSheets;
     if(data.purchases){ purchases=data.purchases; savePurchases(); }
+    if(data.transfers) transfers=data.transfers;
     suppressAutoBackup=true;
     await dbSet('dah2-stock',stock);
     await dbSet('dah2-sales',sales);
@@ -5519,6 +5747,7 @@ async function restoreFromGoogleSheet(){
     if(data.receipts) await dbSet('dah2-receipts',receipts);
     if(data.vouchers) await dbSet('dah2-vouchers',vouchers);
     if(data.valuationSheets) await dbSet('dah2-valuation-sheets',valuationSheets);
+    if(data.transfers) await dbSet('dah2-transfers',transfers);
     suppressAutoBackup=false;
     populateModelSelects();render();renderReceiptLedger();renderVoucherLedger();renderValuationLedger();closeModal('dataio');
     toast('Google Sheet bata restore successful ✓');
