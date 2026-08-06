@@ -760,6 +760,19 @@ try{
 </head>
 <body>
 
+<!-- 👤 LOGIN OVERLAY (Supabase Auth) -->
+<div id="auth-login-overlay" style="position:fixed;inset:0;z-index:100000;background:#1a1d23;display:none;align-items:center;justify-content:center;font-family:inherit;padding:16px">
+  <div style="width:100%;max-width:340px;padding:32px 28px;background:#20242c;border-radius:14px;box-shadow:0 20px 60px rgba(0,0,0,0.5);text-align:center">
+    <div style="font-size:32px;margin-bottom:8px">👤</div>
+    <div style="font-size:17px;font-weight:700;color:#fff;margin-bottom:4px">Divya Auto Hub</div>
+    <div style="font-size:12.5px;color:#9aa1ac;margin-bottom:18px">Login garnus (Admin le account banaidincha)</div>
+    <input id="auth-email" type="email" placeholder="Email" autocomplete="username" style="width:100%;padding:12px;font-size:15px;text-align:center;border-radius:8px;border:1px solid #383e48;background:#14161a;color:#fff;margin-bottom:8px;box-sizing:border-box" onkeydown="if(event.key==='Enter'){event.preventDefault();document.getElementById('auth-password').focus();}">
+    <input id="auth-password" type="password" placeholder="Password" autocomplete="current-password" style="width:100%;padding:12px;font-size:15px;text-align:center;border-radius:8px;border:1px solid #383e48;background:#14161a;color:#fff;margin-bottom:8px;box-sizing:border-box" onkeydown="if(event.key==='Enter'){event.preventDefault();doLogin();}">
+    <div id="auth-login-error" style="color:#e8532b;font-size:12px;min-height:16px;margin-bottom:6px"></div>
+    <button id="auth-login-btn" onclick="doLogin()" style="width:100%;padding:11px;border:none;border-radius:8px;background:#e8532b;color:#fff;font-weight:600;font-size:14px;cursor:pointer">Login</button>
+  </div>
+</div>
+
 <!-- 🔒 PIN LOCK OVERLAY -->
 <div id="pin-lock-overlay" style="position:fixed;inset:0;z-index:99999;background:#1a1d23;display:flex;align-items:center;justify-content:center;font-family:inherit;padding:16px">
   <div style="width:100%;max-width:340px;padding:32px 28px;background:#20242c;border-radius:14px;box-shadow:0 20px 60px rgba(0,0,0,0.5);text-align:center">
@@ -792,6 +805,10 @@ try{
       <span id="cloud-sync-badge" style="color:var(--gray-500)">☁️ Connecting...</span>
       <button onclick="manualSyncNow()" title="Sync Now" style="background:none;border:none;color:var(--gray-500);cursor:pointer;font-size:12px;padding:0">🔄</button>
       <button onclick="lockAppNow()" title="Lock App" style="background:none;border:none;color:var(--gray-500);cursor:pointer;font-size:12px;padding:0;margin-left:auto">🔒</button>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;margin-top:6px;font-size:10.5px">
+      <span id="user-role-badge" style="color:var(--gray-500)"></span>
+      <button onclick="logoutApp()" title="Logout" style="background:none;border:none;color:var(--gray-500);cursor:pointer;font-size:11px;padding:0;margin-left:auto">🚪 Logout</button>
     </div>
   </div>
   <div class="nav-section">
@@ -3210,7 +3227,12 @@ async function cloudPush(key,value){
         updateCloudSyncStatus('Synced ✓',true);
       }catch(e){
         console.warn('Cloud push failed for',k,e);
-        updateCloudSyncStatus('Offline (local ma save vayo)',false);
+        if(e && e.message && e.message.indexOf('ADMIN_ONLY_DELETE')!==-1){
+          alert('❌ Delete block vayo: yo record admin le matra delete garna sakcha. Tapaiko change save vayena, data cloud bata restore huँdai cha.');
+          cloudPullAll().then(()=>location.reload());
+        }else{
+          updateCloudSyncStatus('Offline (local ma save vayo)',false);
+        }
       }
     }
   },500);
@@ -3276,6 +3298,88 @@ async function manualSyncNow(){
 const PIN_KEY='dah2-app-pin-hash';
 const PIN_SALT='dah2-static-salt-v1';
 let pinMode='checking';
+
+// ══════════════════════════════════════════════
+//  👤 SUPABASE AUTH (login + admin/staff role)
+// ══════════════════════════════════════════════
+let currentUserRole=null;   // 'admin' | 'staff'
+let currentUserEmail=null;
+function isAdmin(){ return currentUserRole==='admin'; }
+
+async function loadUserProfile(){
+  if(!window.supabase) return;
+  try{
+    const {data:{user}}=await window.supabase.auth.getUser();
+    if(!user){ currentUserRole=null; currentUserEmail=null; return; }
+    currentUserEmail=user.email;
+    const {data,error}=await window.supabase.from('profiles').select('role').eq('id',user.id).maybeSingle();
+    if(error) throw error;
+    currentUserRole=data?data.role:'staff';
+  }catch(e){
+    console.warn('Profile load failed',e);
+    currentUserRole='staff'; // safe default: cannot delete if role unknown
+  }
+  const badge=document.getElementById('user-role-badge');
+  if(badge) badge.textContent=(currentUserEmail||'')+' · '+(isAdmin()?'👑 Admin':'👤 Staff');
+}
+
+async function doLogin(){
+  const email=(document.getElementById('auth-email').value||'').trim();
+  const pass=(document.getElementById('auth-password').value||'').trim();
+  const errEl=document.getElementById('auth-login-error');
+  errEl.textContent='';
+  if(!email||!pass){ errEl.textContent='Email ra password dubai halnus'; return; }
+  if(!window.supabase){ errEl.textContent='Internet/cloud connect chaina, phir try garnus'; return; }
+  const btn=document.getElementById('auth-login-btn');
+  btn.disabled=true; btn.textContent='Login huँdai...';
+  try{
+    const {error}=await window.supabase.auth.signInWithPassword({email,password:pass});
+    if(error) throw error;
+    await loadUserProfile();
+    const ov=document.getElementById('auth-login-overlay'); if(ov)ov.remove();
+    if(sessionStorage.getItem('dah2-unlocked')==='1'){
+      const pov=document.getElementById('pin-lock-overlay'); if(pov)pov.remove();
+      startAppAfterUnlock();
+    }else{
+      pinLockInit();
+    }
+  }catch(e){
+    errEl.textContent='Login fail: Email ya password galat cha';
+    console.warn('Login failed',e);
+  }finally{
+    btn.disabled=false; btn.textContent='Login';
+  }
+}
+
+async function logoutApp(){
+  if(!confirm('Logout garne?'))return;
+  try{ if(window.supabase) await window.supabase.auth.signOut(); }catch(e){}
+  sessionStorage.removeItem('dah2-unlocked');
+  location.reload();
+}
+
+async function authGateInit(){
+  if(!window.supabase){
+    // offline / cloud unavailable: skip auth gate, go straight to PIN flow
+    const ov=document.getElementById('auth-login-overlay'); if(ov)ov.remove();
+    if(sessionStorage.getItem('dah2-unlocked')==='1'){ startAppAfterUnlock(); } else { pinLockInit(); }
+    return;
+  }
+  try{
+    const {data:{session}}=await window.supabase.auth.getSession();
+    if(session){
+      await loadUserProfile();
+      const ov=document.getElementById('auth-login-overlay'); if(ov)ov.remove();
+      if(sessionStorage.getItem('dah2-unlocked')==='1'){ startAppAfterUnlock(); } else { pinLockInit(); }
+      return;
+    }
+  }catch(e){ console.warn('Session check failed',e); }
+  // no session -> show login form
+  const ov=document.getElementById('auth-login-overlay');
+  if(ov) ov.style.display='flex';
+  const emailEl=document.getElementById('auth-email');
+  if(emailEl) emailEl.focus();
+}
 
 async function sha256Hex(str){
   const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(str));
@@ -4144,6 +4248,7 @@ function editStock(id){
 }
 
 async function deleteStock(id){
+  if(!isAdmin()){toast('❌ Delete: Admin le matra garna milne cha');return;}
   if(!confirm('Yo bike stock bata delete garne?'))return;
   stock=stock.filter(s=>s.id!==id);
   await dbSet('dah2-stock',stock);
@@ -4537,6 +4642,7 @@ async function saveSale(){
 }
 
 async function deleteSale(i){
+  if(!isAdmin()){toast('❌ Delete: Admin le matra garna milne cha');return;}
   if(!confirm('Yo sale delete garne?'))return;
   // Restore stock if possible
   const s=sales[i];
@@ -4707,7 +4813,7 @@ async function saveBooking(){
   closeModal('booking');render();editBookingId=null;
 }
 async function completeBooking(i){bookings[i].status='Completed';await dbSet('dah2-bookings',bookings);render();toast('Booking completed ✓');}
-async function deleteBooking(i){if(!confirm('Delete booking?'))return;bookings.splice(i,1);await dbSet('dah2-bookings',bookings);render();toast('Deleted ✓');}
+async function deleteBooking(i){if(!isAdmin()){toast('❌ Delete: Admin le matra garna milne cha');return;}if(!confirm('Delete booking?'))return;bookings.splice(i,1);await dbSet('dah2-bookings',bookings);render();toast('Deleted ✓');}
 
 // ══════════════════════════════════════════════
 //  DELIVERY SHEET — STOCK LOOKUP
@@ -6183,6 +6289,7 @@ function loadValuationToForm(i){
 }
 
 async function deleteValuationSheet(i){
+  if(!isAdmin()){toast('❌ Delete: Admin le matra garna milne cha');return;}
   if(!confirm('This valuation delete garne?'))return;
   valuationSheets.splice(i,1);
   await dbSet('dah2-valuation-sheets',valuationSheets);
@@ -6690,6 +6797,7 @@ function printSingleReceipt(id){
 }
 
 function deleteReceiptFromLedger(id){
+  if(!isAdmin()){toast('❌ Delete: Admin le matra garna milne cha');return;}
   if(!confirm('Delete this receipt from the ledger?')) return;
   receipts=receipts.filter(r=>r.id!==id);
   dbSet('dah2-receipts',receipts);
@@ -6957,6 +7065,7 @@ function loadVoucherFromLedger(id){
 }
 
 function deleteVoucherFromLedger(id){
+  if(!isAdmin()){toast('❌ Delete: Admin le matra garna milne cha');return;}
   if(!confirm('Delete this voucher from the ledger?')) return;
   vouchers=vouchers.filter(v=>v.id!==id);
   dbSet('dah2-vouchers',vouchers);
@@ -7439,12 +7548,7 @@ const _origInit = typeof init === 'function' ? init : null;
 // ── END NEW FUNCTIONS ──
 
 // ── START ──
-if(sessionStorage.getItem('dah2-unlocked')==='1'){
-  const ov=document.getElementById('pin-lock-overlay'); if(ov)ov.remove();
-  startAppAfterUnlock();
-}else{
-  pinLockInit();
-}
+authGateInit();
 
 // ══════════════════════════════════════════════════════════════
 // ██████  PURCHASE LEDGER MODULE  ██████
@@ -8039,6 +8143,7 @@ function savePurchaseEntry(){
 
 // ── Delete Entry ──
 function deletePurchaseEntry(idx){
+  if(!isAdmin()){toast('❌ Delete: Admin le matra garna milne cha');return;}
   if(!confirm('Yo purchase entry delete garne?')) return;
   loadPurchases();
   purchases.splice(idx,1);
@@ -8802,6 +8907,7 @@ function savePayableEntry(){
   renderPayableLedger(); renderPayableMetrics(); renderPayableAlerts();
 }
 function deletePayableEntry(idx){
+  if(!isAdmin()){toast('❌ Delete: Admin le matra garna milne cha');return;}
   if(!confirm('Yo credit entry delete garne? Payment/PDC/follow-up history pani hatchha.'))return;
   payables.splice(idx,1);
   savePayables();
@@ -9028,6 +9134,7 @@ function paymAddPayment(){
 function paymDeletePayment(id){
   const r=payables[payManageIdx];
   if(!r) return;
+  if(!isAdmin()){toast('❌ Delete: Admin le matra garna milne cha');return;}
   if(!confirm('Yo payment delete garne?'))return;
   r.payments=(r.payments||[]).filter(p=>String(p.id)!==String(id));
   savePayables();
@@ -9054,6 +9161,7 @@ function paymMarkPdc(id,newStatus){
 function paymDeletePdc(id){
   const r=payables[payManageIdx];
   if(!r) return;
+  if(!isAdmin()){toast('❌ Delete: Admin le matra garna milne cha');return;}
   if(!confirm('Yo PDC entry delete garne?'))return;
   r.pdc=(r.pdc||[]).filter(c=>String(c.id)!==String(id));
   savePayables();
