@@ -3183,7 +3183,7 @@ let suppressAutoBackup=false;
 async function dbSet(k,v) {
   try {
     localStorage.setItem(k,JSON.stringify(v));
-    if(!suppressAutoBackup&&(k==='dah2-stock'||k==='dah2-sales'||k==='dah2-bookings'||k==='dah2-receipts'||k==='dah2-vouchers'||k==='dah2-transfers')){
+    if(!suppressAutoBackup&&(k==='dah2-stock'||k==='dah2-sales'||k==='dah2-bookings'||k==='dah2-receipts'||k==='dah2-vouchers'||k==='dah2-transfers'||k==='dah2-purchases'||k==='dah2-payable-ledger'||k==='dah2-valuation-sheets')){
       scheduleAutoBackup();
       scheduleFirebaseSync();
     }
@@ -3470,7 +3470,12 @@ async function startAppAfterUnlock(){
 }
 
 function fmt(n){return Number(n).toLocaleString('en-NP');}
-function today(){return new Date().toISOString().slice(0,10);}
+function today(){
+  // Nepal-local date (avoid UTC date shifting between 00:00 and 05:45 NPT)
+  const d=new Date();
+  const y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,'0'), day=String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${day}`;
+}
 // Normalizes a date string (YYYY/MM/DD, YYYY-MM-DD, DD/MM/YYYY etc.) into a zero-padded
 // "YYYY-MM-DD"-style key so BS/AD date strings sort correctly regardless of separator/padding.
 function dateSortKey(str){
@@ -3997,7 +4002,10 @@ async function importSalesXLSX(e){
 
 function renderBookings(){
   const q=(document.getElementById('book-search').value||'').toLowerCase();
-  let rows=[...bookings].reverse().filter(b=>!q||(b.name+b.model).toLowerCase().includes(q));
+  let rows=bookings
+    .map((b,origIdx)=>({...b,__origIdx:origIdx}))
+    .reverse()
+    .filter(b=>!q||((b.name||'')+(b.model||'')).toLowerCase().includes(q));
   const tbody=document.getElementById('bookings-body');
   if(!rows.length){tbody.innerHTML='<tr><td colspan="9"><div class="empty"><p>No bookings yet</p></div></td></tr>';return;}
   tbody.innerHTML=rows.map((b,i)=>`<tr>
@@ -4007,8 +4015,8 @@ function renderBookings(){
     <td><span class="badge ${b.status==='Completed'?'badge-green':b.status==='Cancelled'?'badge-red':'badge-amber'}">${b.status}</span></td>
     <td>
       <div class="action-btns">
-        ${b.status==='Pending'?`<button class="icon-btn icon-btn-check" onclick="completeBooking(${bookings.length-1-i})" title="Complete"><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></button>`:''}
-        <button class="icon-btn icon-btn-del" onclick="deleteBooking(${bookings.length-1-i})" title="Delete"><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>
+        ${b.status==='Pending'?`<button class="icon-btn icon-btn-check" onclick="completeBooking(${b.__origIdx})" title="Complete"><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></button>`:''}
+        <button class="icon-btn icon-btn-del" onclick="deleteBooking(${b.__origIdx})" title="Delete"><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>
       </div>
     </td>
   </tr>`).join('');
@@ -4618,10 +4626,46 @@ async function saveSale(){
   if(editSaleId!==null){
     const existing=sales[editSaleId];
     if(!existing){editSaleId=null;closeModal('sale');return;}
-    sales[editSaleId]={...existing,cust,phone,addr,photo,model,bikeno,colour,colorHex,engineno,chassisno,amt,pay,date,notes,nepaliDate,salesDays,invoiceno,vatno,namsari,bagmatiNo,modelYear,insurance,insuranceType,insuranceName,selfInsurance,bluebook,servicebook,insurancepolicy,oldbikesakhat,oldbiketax,bluebookFile,bluebookFileName,bluebookFileIsPdf,insurancepolicyFile,insurancepolicyFileName,insurancepolicyFileIsPdf};
+
+    // Reconcile stock when an existing sale is edited.
+    // Restore the previously linked bike first, then mark the newly selected/matched bike as sold.
+    if(existing.stockId){
+      const oldStock=stock.find(x=>x.id===existing.stockId);
+      if(oldStock && oldStock.status==='out'){
+        oldStock.status='in';
+        delete oldStock.soldDate;
+      }
+    }
+
+    const pickerEl=document.getElementById('fs-bike-picker');
+    const selectedId=pickerEl?parseInt(pickerEl.value,10):NaN;
+    let newItem;
+    if(!isNaN(selectedId)&&selectedId>0){
+      newItem=stock.find(x=>x.id===selectedId && x.id!==existing.stockId && (x.status||'in')!=='out');
+    }else{
+      newItem=stock.find(x=>x.model===model&&(x.status||'in')!=='out'&&(
+        (chassisno&&x.chassisno===chassisno) ||
+        (engineno&&x.engineno===engineno) ||
+        (bikeno&&x.bikeno===bikeno) ||
+        (!chassisno&&!engineno&&!bikeno)
+      ));
+    }
+    if(newItem){
+      newItem.status='out';
+      newItem.soldDate=date;
+    }
+
+    sales[editSaleId]={
+      ...existing,cust,phone,addr,photo,model,bikeno,colour,colorHex,engineno,chassisno,amt,pay,date,notes,
+      nepaliDate,salesDays,invoiceno,vatno,namsari,bagmatiNo,modelYear,insurance,insuranceType,insuranceName,
+      selfInsurance,bluebook,servicebook,insurancepolicy,oldbikesakhat,oldbiketax,bluebookFile,bluebookFileName,
+      bluebookFileIsPdf,insurancepolicyFile,insurancepolicyFileName,insurancepolicyFileIsPdf,
+      stockId:newItem?newItem.id:null
+    };
+    await dbSet('dah2-stock',stock);
     await dbSet('dah2-sales',sales);
     closeModal('sale');render();
-    toast('Sale updated ✓');
+    toast(newItem?'Sale updated + stock reconciled ✓':'Sale updated ✓ (no stock item matched)');
     editSaleId=null;
     return;
   }
@@ -5577,7 +5621,7 @@ function saveQuotationPDF(){
 //  EXPORT / IMPORT
 // ══════════════════════════════════════════════
 function exportJSON(){
-  const d={stock,sales,bookings,receipts,vouchers,valuationSheets,exportedAt:new Date().toISOString()};
+  const d={stock,sales,bookings,receipts,vouchers,valuationSheets,purchases,payables,transfers,exportedAt:new Date().toISOString()};
   const blob=new Blob([JSON.stringify(d,null,2)],{type:'application/json'});
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='divya-auto-hub-backup-'+today()+'.json';a.click();
   toast('JSON backup downloaded ✓');
@@ -5598,6 +5642,9 @@ async function handleJSONImport(e){
       if(d.receipts){receipts=d.receipts;await dbSet('dah2-receipts',receipts);}
       if(d.vouchers){vouchers=d.vouchers;await dbSet('dah2-vouchers',vouchers);}
       if(d.valuationSheets){valuationSheets=d.valuationSheets;await dbSet('dah2-valuation-sheets',valuationSheets);}
+      if(d.purchases){purchases=d.purchases;savePurchases();}
+      if(d.payables){payables=d.payables;await dbSet('dah2-payable-ledger',payables);}
+      if(d.transfers){transfers=d.transfers;await dbSet('dah2-transfers',transfers);}
       suppressAutoBackup=false;
       populateModelSelects();render();renderReceiptLedger();renderVoucherLedger();renderValuationLedger();closeModal('dataio');
       toast('Import successful ✓');
@@ -8040,8 +8087,12 @@ function savePurchaseEntry(){
   };
 
   const editIdx=document.getElementById('modal-purchase').dataset.editIdx;
-  if(editIdx!==''){
-    purchases[parseInt(editIdx)]=entry;
+  const purchaseEditIdx=editIdx===''?null:parseInt(editIdx,10);
+  const oldEntry=purchaseEditIdx!==null ? purchases[purchaseEditIdx] : null;
+  // Preserve the original purchase ID during edits so linked stock remains traceable.
+  if(oldEntry && oldEntry.id) entry.id=oldEntry.id;
+  if(purchaseEditIdx!==null){
+    purchases[purchaseEditIdx]=entry;
   }else{
     purchases.push(entry);
   }
@@ -8058,9 +8109,8 @@ function savePurchaseEntry(){
     if(isEdit){
       // Edit case: purchase entry sanga linked stock item update garau
       // purId field cha bhane match garau, otherwise chassis/engine le match garau
-      const oldEntry = purchases[parseInt(editIdx)];
       const linkedIdx = stock.findIndex(s=>
-        (s.purId && s.purId===entry.id) ||
+        (oldEntry && oldEntry.id && s.purId===oldEntry.id) ||
         (entry.chassis && s.chassisno && s.chassisno===entry.chassis) ||
         (entry.engine && s.engineno && s.engineno===entry.engine)
       );
