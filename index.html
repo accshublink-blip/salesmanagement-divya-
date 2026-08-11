@@ -2524,6 +2524,11 @@ try{
         </div>
         <div class="table-card"><div class="table-header"><span class="table-title">🏆 Top Selling Models</span></div><div style="padding:14px 18px" id="dash-top-models"></div></div>
         <div class="table-card"><div class="table-header"><span class="table-title">🕐 Recent Activity</span></div><div style="padding:14px 18px" id="dash-activity"></div></div>
+        <div class="table-card" style="grid-column:1/-1">
+          <div class="table-header"><span class="table-title">💰 Model-wise Sales — Cash vs Finance</span><span id="dash-paychart-top" style="font-size:11px;font-weight:600;color:var(--gray-500)"></span></div>
+          <div id="dash-paychart-badges" style="display:flex;flex-wrap:wrap;gap:8px;padding:12px 16px 0"></div>
+          <div style="padding:8px 16px 14px" id="dash-paychart-wrap"></div>
+        </div>
       </div>
     </div>
 
@@ -4052,6 +4057,102 @@ function renderDashboard(){
   document.getElementById('dash-top-models').innerHTML=topModels.length?topModels.map(([m,v])=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--gray-100)"><span style="font-size:13px">${m}</span><span class="badge badge-green">${v.count} sold</span></div>`).join(''):'<p style="color:var(--gray-400);font-size:13px">No sales yet</p>';
   const activity=[...sales.slice(-3).reverse().map(s=>`<div style="padding:8px 0;border-bottom:1px solid var(--gray-100);font-size:13px">🟢 Sale: <strong>${s.model}</strong> → ${s.cust} <span style="color:var(--gray-400);font-size:11px">${s.date}</span></div>`),...bookings.filter(b=>b.status==='Pending').slice(-2).map(b=>`<div style="padding:8px 0;border-bottom:1px solid var(--gray-100);font-size:13px">🔵 Booking: <strong>${b.model}</strong> → ${b.name} <span style="color:var(--gray-400);font-size:11px">${b.date}</span></div>`)];
   document.getElementById('dash-activity').innerHTML=activity.length?activity.join(''):'<p style="color:var(--gray-400);font-size:13px">No recent activity</p>';
+  renderModelPayChart();
+}
+
+// ══════════════════════════════════════════════
+//  📊 MODEL-WISE SALES CHART — Cash vs Finance
+// ══════════════════════════════════════════════
+// A sale's Payment Mode field is free text (e.g. "Cash", "Finance", "Finance: Sunrise Bank").
+// Anything containing "finance" is bucketed as Finance; everything else is Cash.
+function classifyPayMode(pay){
+  return /finance/i.test(String(pay||'')) ? 'finance' : 'cash';
+}
+
+function renderModelPayChart(){
+  const wrap=document.getElementById('dash-paychart-wrap');
+  const badgeWrap=document.getElementById('dash-paychart-badges');
+  const topTag=document.getElementById('dash-paychart-top');
+  if(!wrap) return;
+
+  if(!sales.length){
+    wrap.innerHTML='<p style="color:var(--gray-400);font-size:13px;padding:8px 0">No sales yet — chart le data paunasath auto update huncha.</p>';
+    badgeWrap.innerHTML='';
+    if(topTag) topTag.textContent='';
+    return;
+  }
+
+  // Aggregate per model: cash count/amount, finance count/amount
+  const map={};
+  sales.forEach(s=>{
+    const m=s.model||'—';
+    if(!map[m]) map[m]={cash:0,finance:0,cashAmt:0,financeAmt:0};
+    const bucket=classifyPayMode(s.pay);
+    map[m][bucket]++;
+    map[m][bucket+'Amt']+=Number(s.amt)||0;
+  });
+
+  const rows=Object.entries(map).map(([model,v])=>({
+    model, cash:v.cash, finance:v.finance, total:v.cash+v.finance,
+    cashAmt:v.cashAmt, financeAmt:v.financeAmt
+  })).sort((a,b)=>b.total-a.total);
+
+  const TOP_N=8;
+  const shown=rows.slice(0,TOP_N);
+  const others=rows.slice(TOP_N);
+
+  // ── Badges: overall / cash / finance toppers ──
+  const topOverall=rows[0];
+  const topCash=[...rows].sort((a,b)=>b.cash-a.cash)[0];
+  const topFinance=[...rows].filter(r=>r.finance>0).sort((a,b)=>b.finance-a.finance)[0];
+  const badge=(label,icon,r,metricKey,color)=>{
+    if(!r||!r[metricKey]) return '';
+    return `<div style="flex:1;min-width:120px;padding:7px 10px;background:${color}12;border:1px solid ${color}33;border-radius:8px">
+      <div style="font-size:9px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;color:${color}">${icon} ${label}</div>
+      <div style="font-size:12.5px;font-weight:700;color:var(--gray-700);margin-top:1px;line-height:1.2">${r.model}</div>
+      <div style="font-size:10px;color:var(--gray-500)">${r[metricKey]} unit${r[metricKey]!==1?'s':''}</div>
+    </div>`;
+  };
+  badgeWrap.innerHTML=[
+    badge('Top Overall','🏆',topOverall,'total','#1a7a4a'),
+    badge('Top Cash','💵',topCash,'cash','#2563eb'),
+    badge('Top Finance','🏦',topFinance,'finance','#d97706')
+  ].join('');
+  if(topTag) topTag.textContent=others.length?`(Top ${TOP_N} of ${rows.length} models shown)`:'';
+
+  // ── Chart: horizontal stacked bars (Cash + Finance), pure SVG, no external lib ──
+  const rowH=20, gap=6, leftPad=118, rightPad=38, topPad=4, chartW=560;
+  const maxTotal=Math.max(1,...shown.map(r=>r.total));
+  const plotW=chartW-leftPad-rightPad;
+  const svgH=topPad+shown.length*(rowH+gap);
+
+  const bars=shown.map((r,i)=>{
+    const y=topPad+i*(rowH+gap);
+    const cashW=(r.cash/maxTotal)*plotW;
+    const finW=(r.finance/maxTotal)*plotW;
+    const totalW=cashW+finW;
+    const modelLabel=r.model.length>16?r.model.slice(0,15)+'…':r.model;
+    return `
+      <g>
+        <text x="${leftPad-8}" y="${y+rowH/2+3.5}" text-anchor="end" font-size="10" font-family="DM Sans,sans-serif" fill="#374151" font-weight="600">${modelLabel}</text>
+        <rect x="${leftPad}" y="${y}" width="${plotW}" height="${rowH}" rx="4" fill="#f3f4f6"/>
+        ${cashW>0?`<rect x="${leftPad}" y="${y}" width="${cashW}" height="${rowH}" rx="4" fill="#2563eb"/>`:''}
+        ${finW>0?`<rect x="${leftPad+cashW}" y="${y}" width="${finW}" height="${rowH}" rx="${cashW>0?'0':'4'}" fill="#d97706"/>`:''}
+        <text x="${leftPad+totalW+6}" y="${y+rowH/2+3.5}" font-size="10" font-family="'DM Mono',monospace" fill="#111827" font-weight="700">${r.total}</text>
+        <title>${r.model} — Cash: ${r.cash} (NPR ${Math.round(r.cashAmt).toLocaleString('en-IN')}) · Finance: ${r.finance} (NPR ${Math.round(r.financeAmt).toLocaleString('en-IN')})</title>
+      </g>`;
+  }).join('');
+
+  wrap.innerHTML=`
+    <div style="overflow-x:auto">
+      <svg viewBox="0 0 ${chartW} ${svgH}" width="100%" style="max-width:460px;height:auto;font-family:'DM Sans',sans-serif;display:block">
+        ${bars}
+      </svg>
+    </div>
+    <div style="display:flex;gap:14px;align-items:center;margin-top:4px;padding-left:${leftPad}px">
+      <span style="display:flex;align-items:center;gap:5px;font-size:10.5px;color:var(--gray-500)"><span style="width:9px;height:9px;border-radius:2px;background:#2563eb;display:inline-block"></span>Cash</span>
+      <span style="display:flex;align-items:center;gap:5px;font-size:10.5px;color:var(--gray-500)"><span style="width:9px;height:9px;border-radius:2px;background:#d97706;display:inline-block"></span>Finance</span>
+    </div>`;
 }
 
 // ══════════════════════════════════════════════
@@ -6041,6 +6142,51 @@ function formatImportDate(v){
   const m=s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
   if(m) return m[3]+'-'+m[2].padStart(2,'0')+'-'+m[1].padStart(2,'0');
   return today();
+}
+
+// ── SMART DATE PARSER: auto-detect English (AD) or Nepali (BS) date, ──
+// ── in ANY common format, and return BOTH the BS and AD equivalents. ──
+function smartImportDate(v){
+  if(v===undefined||v===null||v===''){ return {ad:'',bs:''}; }
+  // Excel date serial number or JS Date object → always AD
+  if(v instanceof Date || typeof v==='number'){
+    const ad=formatImportDate(v);
+    if(!ad) return {ad:'',bs:''};
+    const bsParsed=adToBS(new Date(ad+'T00:00:00'));
+    return {ad, bs: bsParsed? bsParsed.y+'/'+String(bsParsed.m).padStart(2,'0')+'/'+String(bsParsed.d).padStart(2,'0') : ''};
+  }
+  const s=String(v).trim();
+  if(!s) return {ad:'',bs:''};
+
+  // YYYY-MM-DD / YYYY/MM/DD / YYYY.MM.DD — year-first. Could be AD or BS.
+  // BS years currently run ~2075-2090s while realistic AD dealer dates are <=2060, so use 2060 as the split point.
+  const yFirst=s.match(/^(\d{4})[\/\-.](\d{1,2})[\/\-.](\d{1,2})$/);
+  if(yFirst){
+    const y=+yFirst[1], m=+yFirst[2], d=+yFirst[3];
+    if(y>=2060){
+      // Nepali (BS) date
+      const ad=bsToAD(y,m,d);
+      if(ad && !isNaN(ad.getTime())){
+        return {ad: formatADForInput(ad), bs: y+'/'+String(m).padStart(2,'0')+'/'+String(d).padStart(2,'0')};
+      }
+      return {ad:'', bs:s}; // out-of-range BS year — keep raw text
+    }
+    // English (AD) date
+    const adStr=y+'-'+String(m).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+    const bsParsed=adToBS(new Date(adStr+'T00:00:00'));
+    return {ad:adStr, bs: bsParsed? bsParsed.y+'/'+String(bsParsed.m).padStart(2,'0')+'/'+String(bsParsed.d).padStart(2,'0') : ''};
+  }
+
+  // DD/MM/YYYY or MM/DD/YYYY — day/month-first is always an English (AD) date in this app.
+  const dFirst=s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+  if(dFirst){
+    const ad=formatImportDate(s);
+    const bsParsed=adToBS(new Date(ad+'T00:00:00'));
+    return {ad, bs: bsParsed? bsParsed.y+'/'+String(bsParsed.m).padStart(2,'0')+'/'+String(bsParsed.d).padStart(2,'0') : ''};
+  }
+
+  // Unrecognized format — keep the raw text as-is (legacy fallback, no AD computed)
+  return {ad:'', bs:s};
 }
 
 function exportExcel(type){
@@ -8462,6 +8608,7 @@ async function importPurchaseXLSX(e){
 
     let added=0, updated=0, skipped=0;
     const inFileKeys=new Set(); // prevent duplicates within the file itself
+    const stockSyncQueue=[]; // purchase rows to sync into Stock after the main loop
 
     rows.forEach(r=>{
       const model   =String(r['Model']   ||r['model']   ||'').trim();
@@ -8485,9 +8632,14 @@ async function importPurchaseXLSX(e){
       const vat      =Math.round(taxable*0.13*100)/100;
       const total    =Math.round((taxable+vat)*100)/100;
 
+      // Date: accept English (AD) or Nepali (BS), in any common format — auto-detect + fill both.
+      const rawDate=r['Date (BS)']||r['Date (AD)']||r['Date']||r['date']||'';
+      const parsedDate=smartImportDate(rawDate);
+
       const entry={
         id: Date.now()+added+updated+Math.floor(Math.random()*9999),
-        date:      String(r['Date (BS)']||r['date']||'').trim(),
+        date:      parsedDate.bs || String(rawDate).trim(),
+        dateAD:    parsedDate.ad || '',
         invoiceno, supplier, model,
         colour:    String(r['Colour']   ||r['colour']  ||'').trim(),
         regno,
@@ -8501,11 +8653,14 @@ async function importPurchaseXLSX(e){
       const dupeIdx=findDupeIdx(invoiceno, chassis, engine);
       if(dupeIdx!==-1){
         entry.id = purchases[dupeIdx].id; // preserve original id
+        const oldEntry = purchases[dupeIdx];
         purchases[dupeIdx]=entry;
         updated++;
+        stockSyncQueue.push({entry, isNew:false, oldId: oldEntry.id});
       } else {
         purchases.push(entry);
         added++;
+        stockSyncQueue.push({entry, isNew:true, oldId:null});
       }
     });
 
@@ -8513,10 +8668,85 @@ async function importPurchaseXLSX(e){
     renderPurchase();
     renderPurchaseMetrics();
 
+    // ── AUTO-SYNC STOCK: same behaviour as adding a purchase manually — ──
+    // ── every imported purchase row also creates/updates its Stock entry. ──
+    let stockAdded=0, stockLinked=0;
+    if(stockSyncQueue.length){
+      if(!stock||!stock.length) stock = await dbGet('dah2-stock') || [];
+      stockSyncQueue.forEach(({entry, isNew, oldId})=>{
+        if(!isNew){
+          // Duplicate purchase row updated → sync its linked stock item too
+          const linkedIdx=stock.findIndex(s=>
+            (oldId && s.purId===oldId) ||
+            (entry.chassis && s.chassisno && s.chassisno===entry.chassis) ||
+            (entry.engine && s.engineno && s.engineno===entry.engine)
+          );
+          if(linkedIdx>=0 && stock[linkedIdx].status!=='out'){
+            stock[linkedIdx]={
+              ...stock[linkedIdx],
+              model: entry.model,
+              colour: entry.colour,
+              bikeno: entry.regno||stock[linkedIdx].bikeno,
+              invoiceno: entry.invoiceno,
+              chassisno: entry.chassis||stock[linkedIdx].chassisno,
+              engineno: entry.engine||stock[linkedIdx].engineno,
+              batteryno: entry.battery||stock[linkedIdx].batteryno,
+              price: entry.unitprice||stock[linkedIdx].price,
+              purchasedate: entry.dateAD||entry.date||stock[linkedIdx].purchasedate,
+              notes: entry.notes||stock[linkedIdx].notes,
+              purId: entry.id
+            };
+            stockLinked++;
+          }
+          return;
+        }
+        // New purchase row → add matching bike(s) to stock (qty jati bike)
+        const baseId=entry.id;
+        const rowQty=Math.max(1, Math.floor(entry.qty)||1);
+        for(let i=0;i<rowQty;i++){
+          const dup=stock.find(s=>
+            (entry.chassis && s.chassisno && s.chassisno===entry.chassis) ||
+            (entry.engine && s.engineno && s.engineno===entry.engine)
+          );
+          if(dup){
+            if(dup.status!=='out') dup.purId=entry.id;
+            continue;
+          }
+          stock.push({
+            id: baseId+i,
+            purId: entry.id,
+            model: entry.model,
+            cat: (typeof CAT_MAP!=='undefined' && CAT_MAP[entry.model])||'EV',
+            colour: entry.colour||'',
+            colorHex: '#9e9e9e',
+            bikeno: rowQty===1?(entry.regno||''):'',
+            engineno: rowQty===1?(entry.engine||''):'',
+            chassisno: rowQty===1?(entry.chassis||''):'',
+            batteryno: rowQty===1?(entry.battery||''):'',
+            invoiceno: entry.invoiceno||'',
+            vatamt: Math.round(entry.vat)||0,
+            year: '',
+            price: entry.unitprice||(typeof PRICE_MAP!=='undefined' && PRICE_MAP[entry.model])||0,
+            status: 'in',
+            purchasedate: entry.dateAD||entry.date||today(),
+            notes: entry.notes||''
+          });
+          stockAdded++;
+        }
+      });
+      if(stockAdded||stockLinked){
+        await dbSet('dah2-stock', stock);
+        if(typeof populateModelSelects==='function') populateModelSelects();
+        if(typeof render==='function') render();
+      }
+    }
+
     let parts=[];
     if(added)   parts.push(added+' naya add');
     if(updated) parts.push(updated+' duplicate auto-update');
     if(skipped) parts.push(skipped+' blank/skip');
+    if(stockAdded) parts.push(stockAdded+' stock ma add');
+    if(stockLinked) parts.push(stockLinked+' stock update');
     toast('Import: '+parts.join(' | ')+' ✓');
 
     if(updated>0){
