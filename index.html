@@ -763,11 +763,12 @@ try{
 <!-- 👤 LOGIN OVERLAY (Supabase Auth) -->
 <div id="auth-login-overlay" style="position:fixed;inset:0;z-index:100000;background:#1a1d23;display:none;align-items:center;justify-content:center;font-family:inherit;padding:16px">
   <div style="width:100%;max-width:340px;padding:32px 28px;background:#20242c;border-radius:14px;box-shadow:0 20px 60px rgba(0,0,0,0.5);text-align:center">
-    <div style="font-size:32px;margin-bottom:8px">👤</div>
+    <div class="auth-brand-mark">DAH</div>
     <div style="font-size:17px;font-weight:700;color:#fff;margin-bottom:4px">Divya Auto Hub</div>
     <div style="font-size:12.5px;color:#9aa1ac;margin-bottom:18px">Login garnus (Admin le account banaidincha)</div>
     <input id="auth-email" type="email" placeholder="Email" autocomplete="username" style="width:100%;padding:12px;font-size:15px;text-align:center;border-radius:8px;border:1px solid #383e48;background:#14161a;color:#fff;margin-bottom:8px;box-sizing:border-box" onkeydown="if(event.key==='Enter'){event.preventDefault();document.getElementById('auth-password').focus();}">
     <input id="auth-password" type="password" placeholder="Password" autocomplete="current-password" style="width:100%;padding:12px;font-size:15px;text-align:center;border-radius:8px;border:1px solid #383e48;background:#14161a;color:#fff;margin-bottom:8px;box-sizing:border-box" onkeydown="if(event.key==='Enter'){event.preventDefault();doLogin();}">
+    <button id="auth-reset-btn" type="button" onclick="resetPassword()" style="display:block;width:100%;margin:8px 0 0;padding:7px;background:none;border:0;color:#7dd3a7;font-size:12px;cursor:pointer">Forgot password?</button>
     <div id="auth-login-error" style="color:#e8532b;font-size:12px;min-height:16px;margin-bottom:6px"></div>
     <button id="auth-login-btn" onclick="doLogin()" style="width:100%;padding:11px;border:none;border-radius:8px;background:#e8532b;color:#fff;font-weight:600;font-size:14px;cursor:pointer">Login</button>
   </div>
@@ -808,6 +809,7 @@ try{
     </div>
     <div style="display:flex;align-items:center;gap:8px;margin-top:6px;font-size:10.5px">
       <span id="user-role-badge" style="color:var(--gray-500)"></span>
+      <button id="admin-users-btn" onclick="openUserManagement()" title="User Management" style="display:none;background:none;border:none;color:#8b5cf6;cursor:pointer;font-size:11px;padding:0">👥 Users</button>
       <button onclick="logoutApp()" title="Logout" style="background:none;border:none;color:var(--gray-500);cursor:pointer;font-size:11px;padding:0;margin-left:auto">🚪 Logout</button>
     </div>
   </div>
@@ -898,7 +900,7 @@ try{
       Nepali Calendar
     </div>
     <div class="nav-label" style="margin-top:16px">Data</div>
-    <div class="nav-item" onclick="openModal('dataio')">
+    <div class="nav-item" data-admin-only="true" onclick="if(!isAdmin()){toast('❌ Export / Import: Admin le matra garna milne cha');return;} openModal('dataio')">
       <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
       Export / Import
     </div>
@@ -1909,48 +1911,69 @@ try{
       </div>
     </div>
 
-    <!-- ══ PURCHASE LEDGER ADD/EDIT MODAL ══ -->
+    <!-- ══ PURCHASE INVOICE ADD/EDIT MODAL — MULTI ITEM ══ -->
     <div class="overlay" id="modal-purchase">
-      <div class="modal" style="max-width:640px">
+      <div class="modal" style="max-width:980px">
         <div class="modal-head">
-          <h2 id="pur-modal-title">➕ नयाँ Purchase Entry</h2>
+          <div>
+            <h2 id="pur-modal-title">➕ नयाँ Purchase Invoice</h2>
+            <div id="pur-invoice-subtitle" style="font-size:11px;color:var(--gray-500);margin-top:2px">One invoice → multiple bikes / engine / chassis</div>
+          </div>
           <button class="modal-close" onclick="closeModal('purchase')">✕</button>
         </div>
         <div class="modal-body">
-          <!-- Duplicate Warning Banner -->
           <div id="pur-dupe-banner" style="display:none;background:#fff3cd;border:1.5px solid #f0a500;border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:12.5px">
-            <div style="font-weight:700;color:#b45309;margin-bottom:5px">⚠️ Duplicate Entry Detected!</div>
+            <div style="font-weight:700;color:#b45309;margin-bottom:5px">⚠️ Duplicate Invoice / Serial Detected!</div>
             <div id="pur-dupe-info" style="color:#78350f;line-height:1.7"></div>
             <div style="margin-top:6px;display:flex;gap:8px">
-              <button type="button" onclick="purLoadExisting()" style="font-size:11.5px;padding:3px 10px;border:1px solid #f0a500;background:#fef3c7;border-radius:5px;cursor:pointer;font-weight:600">✏️ Existing Edit Garna</button>
+              <button type="button" onclick="purLoadExisting()" style="font-size:11.5px;padding:3px 10px;border:1px solid #f0a500;background:#fef3c7;border-radius:5px;cursor:pointer;font-weight:600">✏️ Existing Invoice Edit</button>
               <button type="button" onclick="purDismissDupe()" style="font-size:11.5px;padding:3px 10px;border:1px solid #ccc;background:#fff;border-radius:5px;cursor:pointer">Dismiss</button>
             </div>
           </div>
+
           <div class="form-grid">
-            <div class="form-group"><label>Date (BS) *</label><input id="pur-f-date" placeholder="2082/01/01" oninput="purSyncDateFromBS()"></div>
+            <div class="form-group"><label>Date (BS) *</label><input id="pur-f-date" placeholder="2083/04/27" oninput="purSyncDateFromBS()"></div>
             <div class="form-group"><label>Date (AD / English)</label><input id="pur-f-date-ad" type="date" style="background:var(--gray-50)" onchange="purSyncDateFromAD()"></div>
             <div class="form-group"><label>Invoice No. *</label><input id="pur-f-invoiceno" class="mono-input" placeholder="INV-001" oninput="purCheckDuplicate()"></div>
-            <div class="form-group form-full"><label>Supplier / Distributor *</label><input id="pur-f-supplier" placeholder="Supplier ko naam"></div>
-            <div class="form-group form-full"><label>Bike Model *</label><input id="pur-f-model" list="pur-model-dl" placeholder="e.g. Honda Activa 6G, TVS Apache RTR 160" autocomplete="off" oninput="purUpdateColourSuggestions()"><datalist id="pur-model-dl"></datalist></div>
-            <div class="form-group"><label>Colour</label><input id="pur-f-colour" list="pur-colour-dl" placeholder="e.g. Black, Red" autocomplete="off"><datalist id="pur-colour-dl"></datalist></div>
-            <div class="form-group"><label>Registration No.</label><input id="pur-f-regno" class="mono-input" placeholder="e.g. LU PRA 01-015 PA 5331" oninput="upperKeepCursor(this)"></div>
-            <div class="form-group"><label>Qty (Piece) *</label><input id="pur-f-qty" type="number" min="1" value="1" oninput="purCalc()"></div>
-            <div class="form-group"><label>Chassis No.</label><input id="pur-f-chassis" class="mono-input" placeholder="CHASSIS NUMBER" oninput="purCheckDuplicate()"></div>
-            <div class="form-group"><label>Engine No.</label><input id="pur-f-engine" class="mono-input" placeholder="ENGINE NUMBER" oninput="purCheckDuplicate()"></div>
-            <div class="form-group"><label>Battery No.</label><input id="pur-f-battery" class="mono-input" placeholder="BATTERY NUMBER"></div>
-            <div class="form-group"><label>Unit Price (NPR) *</label><input id="pur-f-unitprice" type="number" min="0" placeholder="0" oninput="purCalc()"></div>
+            <div class="form-group"><label>Supplier / Distributor *</label><input id="pur-f-supplier" placeholder="Supplier ko naam"></div>
+            <div class="form-group form-full"><label>Remarks / Notes</label><textarea id="pur-f-notes" placeholder="Invoice-level notes..." rows="2"></textarea></div>
+          </div>
+
+          <div style="margin-top:14px;border:1px solid var(--gray-200);border-radius:10px;overflow:hidden">
+            <div style="padding:10px 12px;background:var(--gray-50);display:flex;align-items:center;justify-content:space-between;gap:10px">
+              <div>
+                <strong style="font-size:13px">🏍️ Invoice Items</strong>
+                <span style="font-size:11px;color:var(--gray-500);margin-left:8px">Same invoice ma multiple Engine + Chassis entry garna milcha</span>
+              </div>
+              <button type="button" class="btn btn-primary btn-sm" onclick="purAddItemRow()">＋ Add Bike</button>
+            </div>
+            <div class="tbl-wrap">
+              <table class="purchase-items-editor">
+                <thead>
+                  <tr>
+                    <th>#</th><th>Model *</th><th>Colour</th><th>Reg. No.</th><th>Engine No. *</th><th>Chassis No. *</th><th>Battery No.</th><th>Unit Price *</th><th></th>
+                  </tr>
+                </thead>
+                <tbody id="pur-items-body"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div id="pur-item-dupe-info" style="display:none;margin-top:10px;background:#fee2e2;border:1px solid #fca5a5;color:#991b1b;border-radius:8px;padding:8px 12px;font-size:12px"></div>
+
+          <div class="form-grid" style="margin-top:14px">
             <hr class="section-divider">
-            <div class="section-sub">💰 VAT Calculation (13%)</div>
+            <div class="section-sub">💰 Invoice VAT Calculation (13%)</div>
+            <div class="form-group"><label>Total Bikes</label><input id="pur-f-qty" type="number" readonly value="1" style="background:var(--gray-50)"></div>
             <div class="form-group"><label>Taxable Amount</label><input id="pur-f-taxable" type="number" readonly style="background:var(--gray-50);color:var(--gray-600)"></div>
             <div class="form-group"><label>VAT @ 13%</label><input id="pur-f-vat" type="number" readonly style="background:var(--green-light);color:var(--green-dark);font-weight:600"></div>
-            <div class="form-group form-full"><label>Total Amount (NPR)</label><input id="pur-f-total" type="number" readonly style="background:var(--green-light);color:var(--green-dark);font-weight:700;font-size:15px"></div>
+            <div class="form-group"><label>Total Amount (NPR)</label><input id="pur-f-total" type="number" readonly style="background:var(--green-light);color:var(--green-dark);font-weight:700;font-size:15px"></div>
             <div class="form-group form-full"><label>Amount in Words</label><input id="pur-f-total-words" readonly placeholder="Auto-filled from Total Amount" style="background:var(--gray-50);color:var(--gray-700);font-style:italic;font-size:13px"></div>
-            <div class="form-group form-full"><label>Remarks / Notes</label><textarea id="pur-f-notes" placeholder="Optional notes..." rows="2"></textarea></div>
           </div>
         </div>
         <div class="modal-foot">
           <button class="btn btn-secondary" onclick="closeModal('purchase')">Cancel</button>
-          <button class="btn btn-primary" onclick="savePurchaseEntry()">💾 Save Entry</button>
+          <button class="btn btn-primary" onclick="savePurchaseEntry()">💾 Save Purchase Invoice</button>
         </div>
       </div>
     </div>
@@ -2855,6 +2878,33 @@ try{
   </div>
 </div>
 
+<!-- ══ ADMIN USER MANAGEMENT MODAL ══ -->
+<div class="overlay" id="modal-user-management">
+  <div class="modal" style="max-width:820px">
+    <div class="modal-head">
+      <div>
+        <h2>👥 User Management</h2>
+        <div style="font-size:11px;color:var(--gray-500);margin-top:3px">Admin only · Manage existing Supabase Auth users</div>
+      </div>
+      <button class="modal-close" onclick="closeModal('user-management')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="padding:10px 12px;border:1px solid #ddd6fe;background:#f5f3ff;border-radius:10px;margin-bottom:12px;font-size:12px;line-height:1.5">
+        <b>🔐 New staff?</b> First create the user in <b>Supabase → Authentication → Users</b>. The database trigger automatically creates a <b>staff</b> profile. Then use this screen to promote/demote the role or activate/deactivate the account.
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px">
+        <input id="user-mgmt-search" placeholder="Search name or email..." style="flex:1;padding:9px 11px;border:1px solid var(--gray-300);border-radius:8px" oninput="renderUserManagement()">
+        <button class="btn btn-secondary btn-sm" onclick="loadUserManagement()">↻ Refresh</button>
+      </div>
+      <div id="user-mgmt-status" style="font-size:12px;color:var(--gray-500);margin-bottom:8px"></div>
+      <div id="user-mgmt-list" style="border:1px solid var(--gray-200);border-radius:10px;overflow:auto"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" onclick="closeModal('user-management')">Close</button>
+    </div>
+  </div>
+</div>
+
 <!-- ══ DATA IO MODAL ══ -->
 <div class="overlay" id="modal-dataio">
   <div class="modal" style="max-width:560px">
@@ -3317,15 +3367,159 @@ async function loadUserProfile(){
     const {data:{user}}=await window.supabase.auth.getUser();
     if(!user){ currentUserRole=null; currentUserEmail=null; return; }
     currentUserEmail=user.email;
-    const {data,error}=await window.supabase.from('profiles').select('role').eq('id',user.id).maybeSingle();
+    window._currentAuthUserId=user.id;
+    const {data,error}=await window.supabase.from('profiles').select('role,full_name,active').eq('id',user.id).maybeSingle();
     if(error) throw error;
-    currentUserRole=data?data.role:'staff';
+    if(!data || data.active === false){
+      await window.supabase.auth.signOut();
+      currentUserRole=null;
+      currentUserEmail=null;
+      const ov=document.getElementById('auth-login-overlay');
+      if(ov) ov.style.display='flex';
+      const err=document.getElementById('auth-login-error');
+      if(err) err.textContent='Account profile inactive or not configured. Admin le contact garnus.';
+      return false;
+    }
+    currentUserRole=data.role==='admin'?'admin':'staff';
+    window.currentUserName=data.full_name||'';
   }catch(e){
     console.warn('Profile load failed',e);
-    currentUserRole='staff'; // safe default: cannot delete if role unknown
+    currentUserRole=null;
+    currentUserEmail=null;
+    try{ await window.supabase.auth.signOut(); }catch(_){}
+    const err=document.getElementById('auth-login-error');
+    if(err) err.textContent='Secure profile verification failed. Admin le profile setup garnus.';
+    return false;
   }
   const badge=document.getElementById('user-role-badge');
   if(badge) badge.textContent=(currentUserEmail||'')+' · '+(isAdmin()?'👑 Admin':'👤 Staff');
+  applyRoleUI();
+  return true;
+}
+
+
+// ══════════════════════════════════════════════
+//  👥 ADMIN USER MANAGEMENT / RBAC UI
+// ══════════════════════════════════════════════
+let managedProfiles=[];
+
+function applyRoleUI(){
+  const adminBtn=document.getElementById('admin-users-btn');
+  if(adminBtn) adminBtn.style.display=isAdmin()?'inline-block':'none';
+  // Any element marked data-admin-only is hidden from staff.
+  document.querySelectorAll('[data-admin-only="true"]').forEach(el=>{
+    el.style.display=isAdmin()?'':'none';
+  });
+}
+
+function escapeHtmlUser(v){
+  return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
+}
+
+async function openUserManagement(){
+  if(!isAdmin()){toast('❌ User Management: Admin le matra garna milne cha');return;}
+  const modal=document.getElementById('modal-user-management');
+  if(modal) modal.classList.add('open');
+  await loadUserManagement();
+}
+
+async function loadUserManagement(){
+  if(!isAdmin()) return;
+  const status=document.getElementById('user-mgmt-status');
+  const list=document.getElementById('user-mgmt-list');
+  if(status) status.textContent='Loading profiles...';
+  if(list) list.innerHTML='';
+  try{
+    const {data,error}=await window.supabase.from('profiles').select('id,full_name,role,active,created_at,updated_at').order('created_at',{ascending:true});
+    if(error) throw error;
+    managedProfiles=data||[];
+    if(status) status.textContent=`${managedProfiles.length} profile(s) found`;
+    renderUserManagement();
+  }catch(e){
+    console.error(e);
+    if(status) status.textContent='Could not load profiles. Check Supabase profiles RLS/policies.';
+    if(list) list.innerHTML='<div style="padding:18px;color:#b91c1c;font-size:12px">Profile list load failed.</div>';
+  }
+}
+
+function renderUserManagement(){
+  const list=document.getElementById('user-mgmt-list');
+  const q=(document.getElementById('user-mgmt-search')?.value||'').trim().toLowerCase();
+  if(!list) return;
+  const rows=managedProfiles.filter(p=>{
+    const hay=((p.full_name||'')+' '+(p.id||'')).toLowerCase();
+    return !q || hay.includes(q);
+  });
+  if(!rows.length){ list.innerHTML='<div style="padding:18px;color:var(--gray-500);font-size:12px">No matching profiles.</div>'; return; }
+  list.innerHTML=`<table style="width:100%;border-collapse:collapse;font-size:12px">
+    <thead><tr style="background:var(--gray-50);text-align:left">
+      <th style="padding:10px;border-bottom:1px solid var(--gray-200)">User</th>
+      <th style="padding:10px;border-bottom:1px solid var(--gray-200)">Role</th>
+      <th style="padding:10px;border-bottom:1px solid var(--gray-200)">Status</th>
+      <th style="padding:10px;border-bottom:1px solid var(--gray-200)">Action</th>
+    </tr></thead><tbody>${rows.map(p=>{
+      const self=p.id===currentUserId();
+      return `<tr>
+        <td style="padding:10px;border-bottom:1px solid var(--gray-100)"><b>${escapeHtmlUser(p.full_name||'Unnamed')}</b><div style="font-size:10px;color:var(--gray-500);font-family:monospace">${escapeHtmlUser(p.id)}</div></td>
+        <td style="padding:10px;border-bottom:1px solid var(--gray-100)">
+          <select ${self?'disabled':''} onchange="changeUserRole('${p.id}',this.value)" style="padding:6px 8px;border:1px solid var(--gray-300);border-radius:7px">
+            <option value="admin" ${p.role==='admin'?'selected':''}>👑 Admin</option>
+            <option value="staff" ${p.role!=='admin'?'selected':''}>👤 Staff</option>
+          </select>
+        </td>
+        <td style="padding:10px;border-bottom:1px solid var(--gray-100)"><span style="font-weight:700;color:${p.active?'#15803d':'#b91c1c'}">${p.active?'● Active':'● Inactive'}</span></td>
+        <td style="padding:10px;border-bottom:1px solid var(--gray-100)">
+          <button class="btn btn-secondary btn-sm" ${self?'disabled':''} onclick="toggleUserActive('${p.id}',${!p.active})">${p.active?'Deactivate':'Activate'}</button>
+        </td>
+      </tr>`;
+    }).join('')}</tbody></table>`;
+}
+
+function currentUserId(){
+  return window._currentAuthUserId||null;
+}
+
+async function changeUserRole(id,role){
+  if(!isAdmin()) return;
+  if(id===currentUserId()){toast('❌ Aafno admin role change garna mildaina');renderUserManagement();return;}
+  if(!['admin','staff'].includes(role)) return;
+  try{
+    const {error}=await window.supabase.from('profiles').update({role,updated_at:new Date().toISOString()}).eq('id',id);
+    if(error) throw error;
+    const p=managedProfiles.find(x=>x.id===id); if(p) p.role=role;
+    renderUserManagement(); toast('Role updated ✓');
+  }catch(e){toast('❌ Role update failed: '+(e.message||'permission denied'));renderUserManagement();}
+}
+
+async function toggleUserActive(id,active){
+  if(!isAdmin()) return;
+  if(id===currentUserId()){toast('❌ Aafno account deactivate garna mildaina');return;}
+  const action=active?'activate':'deactivate';
+  if(!confirm(`Yo user lai ${action} garne?`)) return;
+  try{
+    const {error}=await window.supabase.from('profiles').update({active,updated_at:new Date().toISOString()}).eq('id',id);
+    if(error) throw error;
+    const p=managedProfiles.find(x=>x.id===id); if(p) p.active=active;
+    renderUserManagement(); toast((active?'Activated':'Deactivated')+' ✓');
+  }catch(e){toast('❌ Status update failed: '+(e.message||'permission denied'));}
+}
+
+
+async function resetPassword(){
+  const email=(document.getElementById('auth-email')?.value||'').trim();
+  const errEl=document.getElementById('auth-login-error');
+  if(!email){ if(errEl) errEl.textContent='Pahila email halnus.'; return; }
+  if(!window.supabase){ if(errEl) errEl.textContent='Secure login service unavailable.'; return; }
+  try{
+    const {error}=await window.supabase.auth.resetPasswordForEmail(email,{
+      redirectTo: window.location.href.split('#')[0]
+    });
+    if(error) throw error;
+    if(errEl) errEl.style.color='#7dd3a7';
+    if(errEl) errEl.textContent='Password reset email sent. Inbox check garnus.';
+  }catch(e){
+    if(errEl) errEl.textContent='Password reset failed. Email verify garnus.';
+  }
 }
 
 async function doLogin(){
@@ -3340,7 +3534,8 @@ async function doLogin(){
   try{
     const {error}=await window.supabase.auth.signInWithPassword({email,password:pass});
     if(error) throw error;
-    await loadUserProfile();
+    const profileOk=await loadUserProfile();
+    if(!profileOk) return;
     const ov=document.getElementById('auth-login-overlay'); if(ov)ov.remove();
     if(sessionStorage.getItem('dah2-unlocked')==='1'){
       const pov=document.getElementById('pin-lock-overlay'); if(pov)pov.remove();
@@ -3365,18 +3560,24 @@ async function logoutApp(){
 
 async function authGateInit(){
   if(!window.supabase){
-    // offline / cloud unavailable: skip auth gate, go straight to PIN flow
-    const ov=document.getElementById('auth-login-overlay'); if(ov)ov.remove();
-    if(sessionStorage.getItem('dah2-unlocked')==='1'){ startAppAfterUnlock(); } else { pinLockInit(); }
+    // Security: Supabase Auth is mandatory. Never bypass the login gate.
+    const ov=document.getElementById('auth-login-overlay');
+    if(ov){
+      ov.style.display='flex';
+      const err=document.getElementById('auth-login-error');
+      if(err) err.textContent='Secure login unavailable. Internet/Supabase connection required.';
+    }
     return;
   }
   try{
     const {data:{session}}=await window.supabase.auth.getSession();
     if(session){
-      await loadUserProfile();
-      const ov=document.getElementById('auth-login-overlay'); if(ov)ov.remove();
-      if(sessionStorage.getItem('dah2-unlocked')==='1'){ startAppAfterUnlock(); } else { pinLockInit(); }
-      return;
+      const profileOk=await loadUserProfile();
+      if(profileOk){
+        const ov=document.getElementById('auth-login-overlay'); if(ov)ov.remove();
+        if(sessionStorage.getItem('dah2-unlocked')==='1'){ startAppAfterUnlock(); } else { pinLockInit(); }
+        return;
+      }
     }
   }catch(e){ console.warn('Session check failed',e); }
   // no session -> show login form
@@ -9483,7 +9684,23 @@ function printPayableStatement(){
     .grid{display:grid;grid-template-columns:1fr 1fr;gap:6px 20px;margin-bottom:18px;font-size:13px}
     .lbl{color:#666}
     .bal{font-size:20px;font-weight:700;color:${balance>0?'#991b1b':'#166534'}}
-  </style></head><body>
+  
+/* ══ PROFESSIONAL PURCHASE INVOICE EDITOR ══ */
+.purchase-items-editor{min-width:1120px}
+.purchase-items-editor th{font-size:10.5px;background:#0a1e42;color:#fff;padding:8px 7px}
+.purchase-items-editor td{padding:6px;border-bottom:1px solid #edf0f3;vertical-align:middle}
+.purchase-items-editor input{width:100%;min-width:92px;padding:7px 7px;border:1px solid #d1d5db;border-radius:6px;font:12px 'DM Sans',sans-serif;outline:none}
+.purchase-items-editor input:focus{border-color:#1a7a4a;box-shadow:0 0 0 2px rgba(26,122,74,.1)}
+.purchase-items-editor input.mono-input{font-family:'DM Mono',monospace;font-size:11px;text-transform:uppercase}
+.purchase-items-editor .item-no{width:32px;text-align:center;font-weight:700;color:#6b7280}
+.pur-item-remove{width:28px;height:28px;border:1px solid #fca5a5;border-radius:6px;background:#fff1f2;color:#b91c1c;cursor:pointer;font-weight:700}
+.pur-item-remove:hover{background:#fee2e2}
+.pur-item-row.invalid input{border-color:#ef4444!important;background:#fff7f7}
+#auth-login-overlay .auth-brand-mark{width:54px;height:54px;border-radius:14px;background:linear-gradient(135deg,#1a7a4a,#115235);display:flex;align-items:center;justify-content:center;margin:0 auto 12px;color:#fff;font-size:25px;font-weight:800;box-shadow:0 10px 30px rgba(26,122,74,.25)}
+@media(max-width:768px){
+  .purchase-items-editor{min-width:1080px}
+}
+</style></head><body>
   <h1>Divya Auto Hub Pvt. Ltd. — Customer Baaki Statement</h1>
   <div class="sub">Maharajgunj, Kathmandu, Nepal</div>
   <div class="grid">
@@ -9848,6 +10065,272 @@ if(_origShowPageEmbed){
 }
 </script>
 <!-- ══ END EMBEDDED SUB-APPS ══ -->
+<script>
+/* ══════════════════════════════════════════════════════════════
+   DIVYA AUTO HUB — PROFESSIONAL PURCHASE INVOICE ENGINE v3
+   One invoice → many bike rows → unique engine/chassis validation
+   Flat purchase rows are retained for compatibility with existing
+   stock/ledger/export code.
+══════════════════════════════════════════════════════════════ */
+(function(){
+  let _purEditInvoice=null;
+
+  function esc(v){
+    return String(v??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+  function norm(v){ return String(v??'').trim().toUpperCase(); }
+  function rowEl(id){ return document.getElementById(id); }
+
+  window.purAddItemRow=function(item={}){
+    const body=rowEl('pur-items-body'); if(!body) return;
+    const tr=document.createElement('tr');
+    tr.className='pur-item-row';
+    tr.dataset.itemId=item.id||'';
+    tr.innerHTML=`
+      <td class="item-no"></td>
+      <td><input class="pur-model" list="pur-model-dl" value="${esc(item.model)}" placeholder="Bike Model *"></td>
+      <td><input class="pur-colour" list="pur-colour-dl" value="${esc(item.colour)}" placeholder="Colour"></td>
+      <td><input class="pur-regno mono-input" value="${esc(item.regno)}" placeholder="Reg. No." oninput="upperKeepCursor(this)"></td>
+      <td><input class="pur-engine mono-input" value="${esc(item.engine)}" placeholder="ENGINE *" oninput="upperKeepCursor(this);purCheckDuplicate()"></td>
+      <td><input class="pur-chassis mono-input" value="${esc(item.chassis)}" placeholder="CHASSIS *" oninput="upperKeepCursor(this);purCheckDuplicate()"></td>
+      <td><input class="pur-battery mono-input" value="${esc(item.battery)}" placeholder="Battery" oninput="upperKeepCursor(this)"></td>
+      <td><input class="pur-price" type="number" min="0" value="${Number(item.unitprice||0)||''}" placeholder="0" oninput="purCalc()"></td>
+      <td><button type="button" class="pur-item-remove" title="Remove row" onclick="purRemoveItemRow(this)">×</button></td>`;
+    body.appendChild(tr);
+    purRenumber();
+    purCalc();
+  };
+
+  window.purRemoveItemRow=function(btn){
+    const body=rowEl('pur-items-body');
+    if(!body) return;
+    if(body.children.length<=1){ alert('Invoice ma कम्तीमा 1 bike row चाहिन्छ.'); return; }
+    btn.closest('tr')?.remove();
+    purRenumber(); purCalc(); purCheckDuplicate();
+  };
+
+  function purRenumber(){
+    document.querySelectorAll('#pur-items-body .pur-item-row').forEach((tr,i)=>{
+      const c=tr.querySelector('.item-no'); if(c)c.textContent=i+1;
+    });
+    const q=rowEl('pur-f-qty'); if(q)q.value=document.querySelectorAll('#pur-items-body .pur-item-row').length;
+  }
+
+  function getRows(){
+    return [...document.querySelectorAll('#pur-items-body .pur-item-row')].map((tr,i)=>({
+      row:i+1,
+      id:tr.dataset.itemId||'',
+      model:(tr.querySelector('.pur-model')?.value||'').trim(),
+      colour:(tr.querySelector('.pur-colour')?.value||'').trim(),
+      regno:norm(tr.querySelector('.pur-regno')?.value),
+      engine:norm(tr.querySelector('.pur-engine')?.value),
+      chassis:norm(tr.querySelector('.pur-chassis')?.value),
+      battery:norm(tr.querySelector('.pur-battery')?.value),
+      unitprice:Number(tr.querySelector('.pur-price')?.value||0)||0
+    }));
+  }
+
+  window.purCalc=function(){
+    const rows=getRows();
+    const taxable=Math.round(rows.reduce((s,r)=>s+r.unitprice,0)*100)/100;
+    const vat=Math.round(taxable*.13*100)/100;
+    const total=Math.round((taxable+vat)*100)/100;
+    const set=(id,v)=>{const e=rowEl(id);if(e)e.value=v;};
+    set('pur-f-qty',rows.length);
+    set('pur-f-taxable',taxable);
+    set('pur-f-vat',vat);
+    set('pur-f-total',total);
+    const words=numToWordsIndian(total);
+    set('pur-f-total-words',words?('Rupees '+words+' Only'):'');
+  };
+
+  function invoiceRows(invoice){
+    loadPurchases();
+    const inv=norm(invoice);
+    return purchases.filter(p=>norm(p.invoiceno)===inv);
+  }
+
+  function serialConflicts(rows, ignoreIds=[]){
+    const ids=new Set(ignoreIds.map(String));
+    const engines=new Map(), chassis=new Map(), conflicts=[];
+    rows.forEach((r,i)=>{
+      if(r.engine){
+        if(engines.has(r.engine)) conflicts.push(`Engine ${r.engine} row ${engines.get(r.engine)} & ${i+1}`);
+        else engines.set(r.engine,i+1);
+      }
+      if(r.chassis){
+        if(chassis.has(r.chassis)) conflicts.push(`Chassis ${r.chassis} row ${chassis.get(r.chassis)} & ${i+1}`);
+        else chassis.set(r.chassis,i+1);
+      }
+    });
+    loadPurchases();
+    purchases.forEach(p=>{
+      if(ids.has(String(p.id))) return;
+      rows.forEach((r,i)=>{
+        if(r.engine && norm(p.engine)===r.engine) conflicts.push(`Engine ${r.engine} already exists in Purchase Ledger`);
+        if(r.chassis && norm(p.chassis)===r.chassis) conflicts.push(`Chassis ${r.chassis} already exists in Purchase Ledger`);
+      });
+    });
+    return [...new Set(conflicts)];
+  }
+
+  window.purCheckDuplicate=function(){
+    const inv=norm(rowEl('pur-f-invoiceno')?.value);
+    const rows=getRows();
+    const ignoreIds=invoiceRows(inv).map(p=>p.id);
+    const conflicts=[];
+    if(inv){
+      const same=invoiceRows(inv).filter(p=>!ignoreIds.includes(p.id));
+      if(same.length) conflicts.push(`Invoice No. ${inv} already exists`);
+    }
+    conflicts.push(...serialConflicts(rows, ignoreIds));
+    const banner=rowEl('pur-dupe-banner'), info=rowEl('pur-dupe-info');
+    const itemInfo=rowEl('pur-item-dupe-info');
+    if(conflicts.length){
+      if(banner){banner.style.display='block';}
+      if(info)info.innerHTML=conflicts.slice(0,8).map(x=>'• '+esc(x)).join('<br>');
+      if(itemInfo){itemInfo.style.display='block';itemInfo.innerHTML='⚠️ '+conflicts.slice(0,8).map(esc).join('<br>');}
+    }else{
+      purHideDupe();
+      if(itemInfo){itemInfo.style.display='none';itemInfo.innerHTML='';}
+    }
+  };
+
+  window.purHideDupe=function(){
+    const b=rowEl('pur-dupe-banner'); if(b)b.style.display='none';
+    const i=rowEl('pur-item-dupe-info'); if(i){i.style.display='none';i.innerHTML='';}
+    window._purDupeMatch=null;
+  };
+  window.purDismissDupe=function(){ const b=rowEl('pur-dupe-banner'); if(b)b.style.display='none'; };
+  window.purLoadExisting=function(){
+    const inv=norm(rowEl('pur-f-invoiceno')?.value);
+    if(!inv)return;
+    loadPurchases();
+    const idx=purchases.findIndex(p=>norm(p.invoiceno)===inv);
+    if(idx>=0){ closeModal('purchase'); setTimeout(()=>openPurchaseModal(idx),100); }
+  };
+
+  window.openPurchaseModal=function(idx){
+    loadPurchases();
+    _purEditInvoice=null;
+    const title=rowEl('pur-modal-title');
+    if(title)title.textContent=idx===undefined?'➕ नयाँ Purchase Invoice':'✏️ Purchase Invoice Edit';
+
+    ['pur-f-date','pur-f-date-ad','pur-f-invoiceno','pur-f-supplier','pur-f-notes'].forEach(id=>{const e=rowEl(id);if(e)e.value='';});
+    const body=rowEl('pur-items-body'); if(body)body.innerHTML='';
+    const ad=rowEl('pur-f-date-ad'); if(ad)ad.value=new Date().toISOString().slice(0,10);
+    purHideDupe();
+
+    let items=[];
+    if(idx!==undefined && purchases[idx]){
+      const p=purchases[idx];
+      _purEditInvoice=norm(p.invoiceno);
+      const group=purchases.filter(x=>norm(x.invoiceno)===_purEditInvoice);
+      const d=rowEl('pur-f-date'); if(d)d.value=p.date||'';
+      if(ad)ad.value=p.dateAD||ad.value;
+      const inv=rowEl('pur-f-invoiceno'); if(inv)inv.value=p.invoiceno||'';
+      const sup=rowEl('pur-f-supplier'); if(sup)sup.value=p.supplier||'';
+      const notes=rowEl('pur-f-notes'); if(notes)notes.value=p.notes||'';
+      items=group.map(x=>({id:x.id,model:x.model,colour:x.colour,regno:x.regno,engine:x.engine,chassis:x.chassis,battery:x.battery,unitprice:x.unitprice}));
+    }
+    if(!items.length) items=[{}];
+    items.forEach(purAddItemRow);
+    purRenumber();
+    try{purPopulateModelList();purUpdateColourSuggestions();}catch(e){}
+    try{purSyncDateFromAD();}catch(e){}
+    purCalc();
+    rowEl('modal-purchase')?.classList.add('open');
+  };
+
+  window.savePurchaseEntry=async function(){
+    loadPurchases();
+    const date=(rowEl('pur-f-date')?.value||'').trim();
+    const dateAD=rowEl('pur-f-date-ad')?.value||'';
+    const invoiceno=(rowEl('pur-f-invoiceno')?.value||'').trim();
+    const supplier=(rowEl('pur-f-supplier')?.value||'').trim();
+    const notes=(rowEl('pur-f-notes')?.value||'').trim();
+    const rows=getRows();
+
+    if(!date||!supplier||!invoiceno){alert('Date, Invoice No. ra Supplier required chha!');return;}
+    if(!rows.length){alert('At least 1 bike item add garnus.');return;}
+    const bad=rows.filter(r=>!r.model||!r.engine||!r.chassis||r.unitprice<0);
+    if(bad.length){alert('Each bike row ma Model, Engine No., Chassis No. ra Unit Price required chha.');return;}
+
+    const oldGroup=_purEditInvoice?invoiceRows(_purEditInvoice):[];
+    const ignoreIds=oldGroup.map(p=>p.id);
+    const conflicts=serialConflicts(rows,ignoreIds);
+    // Invoice number may be reused only when editing the same invoice.
+    const invConflict=purchases.some(p=>norm(p.invoiceno)===norm(invoiceno)&&!ignoreIds.includes(p.id));
+    if(invConflict){alert(`Invoice No. ${invoiceno} already exists. Existing invoice edit garnus.`);return;}
+    if(conflicts.length){
+      alert('Duplicate Engine/Chassis detected:\\n\\n'+conflicts.slice(0,10).join('\\n'));
+      return;
+    }
+
+    const newRows=rows.map((r,i)=>{
+      const old=oldGroup[i];
+      const id=old?.id || (Date.now()+i+Math.floor(Math.random()*9999));
+      const taxable=r.unitprice;
+      const vat=Math.round(taxable*.13*100)/100;
+      return {
+        id, date, dateAD, invoiceno, supplier, model:r.model, colour:r.colour,
+        regno:r.regno, chassis:r.chassis, engine:r.engine, battery:r.battery,
+        qty:1, unitprice:r.unitprice, taxable, vat,
+        total:Math.round((taxable+vat)*100)/100, notes, invoiceItemNo:i+1
+      };
+    });
+
+    // Remove old rows belonging to edited invoice.
+    if(oldGroup.length){
+      const oldIds=new Set(oldGroup.map(p=>String(p.id)));
+      purchases=purchases.filter(p=>!oldIds.has(String(p.id)));
+    }
+    purchases.push(...newRows);
+    savePurchases();
+
+    // Sync stock per item. Sold stock is preserved; unsold linked stock is replaced.
+    try{
+      let stockArr=await dbGet('dah2-stock')||[];
+      const oldIds=new Set(oldGroup.map(p=>String(p.id)));
+      stockArr=stockArr.filter(s=>!(oldIds.has(String(s.purId)) && s.status!=='out'));
+      newRows.forEach((r,i)=>{
+        const existing=stockArr.find(s=>norm(s.chassisno)===r.chassis || norm(s.engineno)===r.engine);
+        if(existing && existing.status==='out') return;
+        if(existing) return;
+        stockArr.push({
+          id:Date.now()+5000+i,
+          purId:r.id, model:r.model,
+          cat:(typeof CAT_MAP!=='undefined'&&CAT_MAP[r.model])||'EV',
+          colour:r.colour||'',colorHex:'#9e9e9e',
+          bikeno:r.regno||'',engineno:r.engine,chassisno:r.chassis,
+          batteryno:r.battery,invoiceno:r.invoiceno,vatamt:Math.round(r.vat),
+          year:'',price:r.unitprice,status:'in',
+          purchasedate:r.dateAD||r.date||today(),notes:r.notes||''
+        });
+      });
+      await dbSet('dah2-stock',stockArr);
+      stock=stockArr;
+      if(typeof populateModelSelects==='function')populateModelSelects();
+      if(typeof render==='function')render();
+    }catch(e){console.warn('Purchase stock sync failed',e);}
+
+    renderPurchase(); renderPurchaseMetrics();
+    closeModal('purchase');
+    toast(`Purchase Invoice ${invoiceno} saved ✓ ${newRows.length} bike(s)`);
+  };
+
+  // Update title to clearly communicate invoice mode.
+  const oldShowPage=window.showPage;
+  if(typeof oldShowPage==='function'){
+    window.showPage=function(page,el){
+      oldShowPage(page,el);
+      if(page==='purchase-ledger'){
+        setTimeout(()=>{try{renderPurchase();renderPurchaseMetrics();}catch(e){}},0);
+      }
+    };
+  }
+})();
+</script>
 
 </body>
 </html>
