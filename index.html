@@ -1957,6 +1957,8 @@ try{
                 <tbody id="pur-items-body"></tbody>
               </table>
             </div>
+            <datalist id="pur-model-dl"></datalist>
+            <datalist id="pur-colour-dl"></datalist>
           </div>
 
           <div id="pur-item-dupe-info" style="display:none;margin-top:10px;background:#fee2e2;border:1px solid #fca5a5;color:#991b1b;border-radius:8px;padding:8px 12px;font-size:12px"></div>
@@ -7999,9 +8001,9 @@ function purPopulateModelList(){
   dl.innerHTML=[...modelSet].sort().map(m=>`<option value="${m.replace(/"/g,'&quot;')}">`).join('');
 }
 
-// ── Update Colour datalist based on selected model ──
-function purUpdateColourSuggestions(){
-  const modelVal=(document.getElementById('pur-f-model').value||'').trim().toLowerCase();
+// ── Update Colour datalist, optionally scoped to a specific model (used by purRowModelInput) ──
+function purUpdateColourSuggestions(modelVal){
+  modelVal=(modelVal||'').trim().toLowerCase();
   const dl=document.getElementById('pur-colour-dl');
   if(!dl) return;
   const colourSet=new Set();
@@ -8020,6 +8022,41 @@ function purUpdateColourSuggestions(){
   });
   ['Red','Black','White','Blue','Silver','Grey','Green','Yellow','Orange','Pearl White','Matt Black','Midnight Black'].forEach(c=>colourSet.add(c));
   dl.innerHTML=[...colourSet].sort().map(c=>`<option value="${c.replace(/"/g,'&quot;')}">`).join('');
+}
+
+// ── Invoice Items row: Model type/select garda → matching Colour datalist scope + auto-fill last-used Colour ──
+function purRowModelInput(modelInputEl, forceFill){
+  const row=modelInputEl.closest('tr'); if(!row) return;
+  const modelVal=(modelInputEl.value||'').trim();
+  const modelLower=modelVal.toLowerCase();
+  purUpdateColourSuggestions(modelVal);
+  if(!modelVal) return;
+
+  const colourInput=row.querySelector('.pur-colour');
+  if(!colourInput || (colourInput.value||'').trim()) return; // don't overwrite what dealer already typed
+
+  // Find most recent Colour used for this exact Model — check stock first (dah2-stock), then past Purchases.
+  let bestColour='', bestDate='';
+  try{
+    const raw=localStorage.getItem('dah2-stock');
+    const stockArr=raw?JSON.parse(raw):[];
+    stockArr.forEach(s=>{
+      if(s.colour && (s.model||'').trim().toLowerCase()===modelLower){
+        const d=s.purchasedate||'';
+        if(!bestColour || d>=bestDate){ bestColour=s.colour.trim(); bestDate=d; }
+      }
+    });
+  }catch(e){}
+  if(!bestColour){
+    loadPurchases();
+    purchases.forEach(p=>{
+      if(p.colour && (p.model||'').trim().toLowerCase()===modelLower){
+        const d=p.dateAD||p.date||'';
+        if(!bestColour || d>=bestDate){ bestColour=p.colour.trim(); bestDate=d; }
+      }
+    });
+  }
+  if(bestColour) colourInput.value=bestColour;
 }
 
 
@@ -10088,7 +10125,7 @@ if(_origShowPageEmbed){
     tr.dataset.itemId=item.id||'';
     tr.innerHTML=`
       <td class="item-no"></td>
-      <td><input class="pur-model" list="pur-model-dl" value="${esc(item.model)}" placeholder="Bike Model *"></td>
+      <td><input class="pur-model" list="pur-model-dl" value="${esc(item.model)}" placeholder="Bike Model *" oninput="purRowModelInput(this)" onchange="purRowModelInput(this,true)"></td>
       <td><input class="pur-colour" list="pur-colour-dl" value="${esc(item.colour)}" placeholder="Colour"></td>
       <td><input class="pur-regno mono-input" value="${esc(item.regno)}" placeholder="Reg. No." oninput="upperKeepCursor(this)"></td>
       <td><input class="pur-engine mono-input" value="${esc(item.engine)}" placeholder="ENGINE *" oninput="upperKeepCursor(this);purCheckDuplicate()"></td>
