@@ -410,6 +410,28 @@ tr:hover td { background: var(--gray-50); }
 .quote-intro, .quote-closing { font-size: 12.5px; color: var(--mid); margin-bottom: 14px; line-height: 1.7; }
 .quote-intro p, .quote-closing p { margin-bottom: 4px; }
 
+/* ── PRICE LIST STYLES ── */
+.pricelist-wrap { max-width: 900px; margin: 0 auto; }
+.pricelist-controls { background: #fff; border: 1px solid #ddd; border-radius: 8px; padding: 14px 20px; margin-bottom: 14px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; box-shadow: var(--shadow); }
+.pricelist-controls h2 { font-size: 15px; color: var(--dark); flex: 1; min-width: 140px; }
+.pl-date-field { display: flex; flex-direction: column; gap: 3px; }
+.pl-date-field label { font-size: 10px; font-weight: 600; color: var(--gray-500); text-transform: uppercase; letter-spacing: .4px; }
+.pl-date-field .field-input { width: 140px; }
+.pricelist-hint { font-size: 12px; color: var(--gray-500); margin-bottom: 14px; }
+.pricelist-table-card { background: #fff; border: 1px solid #d0d0d0; border-radius: 4px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.10); }
+.pricelist-table { width: 100%; border-collapse: collapse; }
+.pricelist-table thead th { background: var(--green-dark); color: #fff; text-align: left; font-size: 12px; letter-spacing: .4px; text-transform: uppercase; padding: 10px 14px; }
+.pricelist-table tbody td { padding: 6px 10px; border-bottom: 1px solid var(--gray-200); font-size: 13.5px; }
+.pricelist-table tbody tr:nth-child(even) { background: var(--gray-50); }
+.pricelist-table tbody tr:hover { background: var(--green-light); }
+.pl-input { width: 100%; border: 1px solid transparent; background: transparent; padding: 6px 8px; font-size: 13.5px; font-family: 'DM Sans', sans-serif; border-radius: 6px; color: var(--gray-800); }
+.pl-input:hover { border-color: var(--gray-300); }
+.pl-input:focus { outline: none; border-color: var(--green); background: #fff; box-shadow: 0 0 0 2px var(--green-light); }
+.pl-price { font-weight: 700; color: var(--green-dark); font-variant-numeric: tabular-nums; }
+.pl-row-num { color: var(--gray-400); font-size: 12px; text-align: center; }
+.pl-del-btn { background: none; border: none; color: var(--red); cursor: pointer; font-size: 15px; padding: 4px 8px; border-radius: 6px; }
+.pl-del-btn:hover { background: var(--red-light); }
+
 /* STOCK LOOKUP BANNER */
 .stock-lookup-banner {
   background: linear-gradient(135deg, #e8f5ee, #eff6ff);
@@ -618,11 +640,14 @@ select.field-input { cursor: pointer; }
   .delivery-controls, .quotation-controls, .delivery-mode-toggle,
   .stock-lookup-banner, .stock-match-info, .stock-out-banner,
   .receipt-controls, .test-ride-controls,
+  .pricelist-controls, .pricelist-hint, .no-print,
   #deliver-btn-wrap { display: none !important; }
   .main { margin-left: 0 !important; }
   .content { padding: 0 !important; }
   /* delivery / quotation / test-ride */
-  .delivery-wrap, .quotation-wrap { max-width: 100%; }
+  .delivery-wrap, .quotation-wrap, .pricelist-wrap { max-width: 100%; }
+  .pricelist-table-card { box-shadow: none; border: 1px solid #999; }
+  .pl-input { border: none !important; color: #000 !important; font-weight: 600; }
   #delivery-doc, #quotation-doc, #test-ride-doc { box-shadow: none; border: none; padding: 18px 26px; }
   input, select { border-bottom: 1px solid #999 !important; background: transparent !important; }
   #delivery-doc input, #delivery-doc select,
@@ -839,6 +864,10 @@ try{
     <div class="nav-item" onclick="showPage('quotation',this)" data-page="quotation">
       <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/></svg>
       Bike Quotation
+    </div>
+    <div class="nav-item" onclick="showPage('price-list',this)" data-page="price-list">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+      Price List
     </div>
     <div class="nav-item" onclick="showPage('test-ride',this)" data-page="test-ride">
       <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="5.5" cy="17.5" r="3.5"/><circle cx="18.5" cy="17.5" r="3.5"/><path d="M15 6a1 1 0 100-2 1 1 0 000 2zM12 17.5V14l-3-3 4-3 2 3h2"/></svg>
@@ -1450,6 +1479,41 @@ try{
           </div>
 
           <div class="doc-footer">Divya Auto Hub Pvt. Ltd. | Maharajgunj-03, Kathmandu, Nepal | 01-4533133 / 9851061611 / 9801204448 | divyautohub@gmail.com</div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ══ PRICE LIST PAGE ══ -->
+    <div class="page-section" id="page-price-list">
+      <div class="pricelist-wrap">
+
+        <div class="pricelist-controls no-print">
+          <h2>💰 Bajaj Price List</h2>
+          <div class="pl-date-field">
+            <label>Effective Date (BS)</label>
+            <input class="field-input" id="pl-effective-date" placeholder="e.g. २०८३।०४।३१">
+          </div>
+          <button class="btn btn-secondary" onclick="plAddRow()">➕ Add Model</button>
+          <button class="btn btn-blue-solid" onclick="savePriceList()">💾 Save Changes</button>
+          <button class="btn btn-red" onclick="printPriceList()">🖨️ Print</button>
+        </div>
+
+        <div class="pricelist-hint no-print">Price change vaye yaha directly edit garera "Save Changes" click garnus — Quotation, Stock ra aru sabai jaga price auto-update huncha.</div>
+
+        <div class="pricelist-table-card">
+          <table class="pricelist-table">
+            <thead>
+              <tr>
+                <th style="width:36px">#</th>
+                <th>Model</th>
+                <th style="width:150px">Category</th>
+                <th style="width:160px">Retail Price (NPR)</th>
+                <th style="width:50px" class="no-print"></th>
+              </tr>
+            </thead>
+            <tbody id="pricelist-tbody"></tbody>
+          </table>
         </div>
 
       </div>
@@ -3015,15 +3079,19 @@ try{
 // ══════════════════════════════════════════════
 //  DATA
 // ══════════════════════════════════════════════
+// Master price list — kept in sync with the "Price List" page (Bajaj official
+// price notices). Edit prices from the Price List page in-app; that page writes
+// back into this object and persists overrides to dah2-price-list.
 const PRICE_MAP = {
-  'Platina 100 ES BS6':252900,'Pulsar 125 Neon BS6':301900,
-  'Pulsar 150 SD BS6':365900,'Pulsar 150 TD BS6':376900,
-  'Pulsar N 125 BS6':314900,'Pulsar N 150 BS6':389900,
-  'Pulsar N 160 DC ABS BS6':432900,'Pulsar N 250 DC ABS BS6':510900,
-  'Pulsar 220 F ABS FI BS6':451900,'Pulsar 125 NS ABS FI BS6':339900,
-  'Pulsar 200 NS FI DC ABS BS6':464900,'Pulsar 400 NS BS6':599900,
+  'Platina 100 ES BS6':259900,'Pulsar 125 Neon BS6':310900,
+  'Pulsar 150 SD BS6':369900,'Pulsar 150 TD BS6':386900,
+  'Pulsar N 125 BS6':322900,'Pulsar N 150 BS6':399900,
+  'Pulsar N 160 DC ABS BS6':443900,'Pulsar N 250 DC ABS BS6':529900,
+  'Pulsar 220 F ABS FI BS6':459900,'Pulsar 125 NS ABS FI BS6':347900,
+  'Pulsar 200 NS FI DC ABS BS6':475900,'Pulsar 400 NS BS6':619900,
   'Avenger 160 Street ABS':389900,'Avenger 220 Cruise':432900,
-  'Dominar 400 ABS BS6':642900,'Chetak 3501':649000
+  'Dominar 400 ABS BS6':656900,'Chetak 3501':379900,
+  'Chetak C2501':281900,'Chetak C3503':339900
 };
 const CAT_MAP = {
   'Platina 100 ES BS6':'Economy','Pulsar 125 Neon BS6':'Commuter',
@@ -3033,7 +3101,8 @@ const CAT_MAP = {
   'Pulsar 220 F ABS FI BS6':'Sport','Pulsar 125 NS ABS FI BS6':'Sport',
   'Pulsar 200 NS FI DC ABS BS6':'Sport','Pulsar 400 NS BS6':'Sport',
   'Avenger 160 Street ABS':'Cruiser','Avenger 220 Cruise':'Cruiser',
-  'Dominar 400 ABS BS6':'Adventure','Chetak 3501':'Electric'
+  'Dominar 400 ABS BS6':'Adventure','Chetak 3501':'Electric',
+  'Chetak C2501':'Electric','Chetak C3503':'Electric'
 };
 
 let stock = [], sales = [], bookings = [], receipts = [], vouchers = [], transfers = [];
@@ -3259,7 +3328,7 @@ async function dbSet(k,v) {
 //  ☁️ SUPABASE CLOUD SYNC (automatic, cross-device)
 // ══════════════════════════════════════════════
 const SYNC_TABLE='dah_sync';
-const SYNC_KEYS=['dah2-stock','dah2-sales','dah2-bookings','dah2-receipts','dah2-vouchers','dah2-valuation-sheets','dah2-purchases','dah2-payable-ledger','dah2-transfers'];
+const SYNC_KEYS=['dah2-stock','dah2-sales','dah2-bookings','dah2-receipts','dah2-vouchers','dah2-valuation-sheets','dah2-purchases','dah2-payable-ledger','dah2-transfers','dah2-price-list'];
 let cloudPushTimer=null;
 const cloudPushQueue={};
 
@@ -3735,6 +3804,7 @@ async function init() {
   receipts = await dbGet('dah2-receipts') || [];
   vouchers = await dbGet('dah2-vouchers') || [];
   transfers = await dbGet('dah2-transfers') || [];
+  await loadPriceListOverrides();
   populateModelSelects();
   initAllDistrictMuniSelects();
   render();
@@ -3787,6 +3857,135 @@ function getDefaultStock(){
 
 function getAllModelNames(){
   return [...new Set([...Object.keys(PRICE_MAP),...stock.map(s=>s.model)])].sort();
+}
+
+// ══════════════════════════════════════════════
+//  PRICE LIST — editable, printable, synced into PRICE_MAP/CAT_MAP
+// ══════════════════════════════════════════════
+async function loadPriceListOverrides(){
+  try{
+    const saved = await dbGet('dah2-price-list');
+    if(saved && saved.priceMap){
+      Object.keys(PRICE_MAP).forEach(k=>delete PRICE_MAP[k]);
+      Object.assign(PRICE_MAP, saved.priceMap);
+      Object.keys(CAT_MAP).forEach(k=>delete CAT_MAP[k]);
+      Object.assign(CAT_MAP, saved.catMap||{});
+      pricelistEffectiveDate = saved.effectiveDate||'';
+    }
+  }catch(e){ console.warn('price list load failed',e); }
+}
+let pricelistEffectiveDate='';
+
+function renderPriceListPage(){
+  const tbody=document.getElementById('pricelist-tbody');
+  if(!tbody) return;
+  const dateEl=document.getElementById('pl-effective-date');
+  if(dateEl) dateEl.value=pricelistEffectiveDate;
+  const models=Object.keys(PRICE_MAP);
+  tbody.innerHTML=models.map((m,i)=>`
+    <tr>
+      <td class="pl-row-num">${i+1}</td>
+      <td><input class="pl-input pl-model" value="${escapeHtml(m)}"></td>
+      <td><input class="pl-input pl-cat" value="${escapeHtml(CAT_MAP[m]||'')}" placeholder="Category"></td>
+      <td><input class="pl-input pl-price" type="number" value="${PRICE_MAP[m]}" placeholder="0"></td>
+      <td class="no-print"><button class="pl-del-btn" onclick="plDeleteRow(this)" title="Delete">🗑️</button></td>
+    </tr>
+  `).join('');
+}
+
+function plAddRow(){
+  const tbody=document.getElementById('pricelist-tbody');
+  const tr=document.createElement('tr');
+  tr.innerHTML=`
+    <td class="pl-row-num">${tbody.children.length+1}</td>
+    <td><input class="pl-input pl-model" placeholder="e.g. Pulsar 250 F ABS BS6"></td>
+    <td><input class="pl-input pl-cat" placeholder="Category"></td>
+    <td><input class="pl-input pl-price" type="number" placeholder="0"></td>
+    <td class="no-print"><button class="pl-del-btn" onclick="plDeleteRow(this)" title="Delete">🗑️</button></td>
+  `;
+  tbody.appendChild(tr);
+  tr.querySelector('.pl-model').focus();
+}
+
+function plDeleteRow(btn){
+  const tr=btn.closest('tr');
+  tr.remove();
+  document.querySelectorAll('#pricelist-tbody tr').forEach((r,i)=>{ r.querySelector('.pl-row-num').textContent=i+1; });
+}
+
+function savePriceList(){
+  const rows=document.querySelectorAll('#pricelist-tbody tr');
+  const newPriceMap={}, newCatMap={};
+  rows.forEach(r=>{
+    const model=r.querySelector('.pl-model').value.trim();
+    if(!model) return;
+    const cat=r.querySelector('.pl-cat').value.trim();
+    const price=parseInt(r.querySelector('.pl-price').value)||0;
+    newPriceMap[model]=price;
+    newCatMap[model]=cat||'—';
+  });
+  Object.keys(PRICE_MAP).forEach(k=>delete PRICE_MAP[k]);
+  Object.assign(PRICE_MAP,newPriceMap);
+  Object.keys(CAT_MAP).forEach(k=>delete CAT_MAP[k]);
+  Object.assign(CAT_MAP,newCatMap);
+  pricelistEffectiveDate=(document.getElementById('pl-effective-date')||{}).value||'';
+  dbSet('dah2-price-list',{priceMap:newPriceMap,catMap:newCatMap,effectiveDate:pricelistEffectiveDate});
+  populateModelSelects();
+  renderPriceListPage();
+  toast('✅ Price list saved! Quotation ra stock ma pani update vayo.');
+}
+
+function printPriceList(){
+  const rows=[...document.querySelectorAll('#pricelist-tbody tr')].map(r=>({
+    model:r.querySelector('.pl-model').value.trim(),
+    price:parseInt(r.querySelector('.pl-price').value)||0
+  })).filter(r=>r.model);
+  const dateVal=(document.getElementById('pl-effective-date')||{}).value||'';
+  const rowsHtml=rows.map((r,i)=>`<tr><td>${i+1}</td><td>${escapeHtml(r.model)}</td><td>${fmt(r.price)}</td></tr>`).join('');
+  const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Bajaj Price List — Divya Auto Hub</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Segoe UI',Arial,sans-serif;background:#fff;padding:34px 40px;color:#111}
+    .header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px double #1a7a4a;padding-bottom:14px;margin-bottom:18px}
+    .brand{display:flex;align-items:center;gap:12px}
+    .brand-mark{width:46px;height:46px;border-radius:50%;background:#1a7a4a;color:#fff;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;font-family:Arial,sans-serif;flex-shrink:0}
+    .brand h1{font-size:18px;color:#115235}
+    .brand .tag{font-size:10.5px;letter-spacing:1px;text-transform:uppercase;color:#d97706;margin-top:2px}
+    .company{text-align:right;font-size:12px;line-height:1.55;color:#444}
+    .company strong{display:block;font-size:13.5px;color:#111;margin-bottom:2px}
+    .date{font-size:12.5px;color:#555;text-align:right;margin-bottom:14px}
+    table{width:100%;border-collapse:collapse}
+    thead th{background:#1a7a4a;color:#fff;text-align:left;font-size:12px;letter-spacing:.4px;text-transform:uppercase;padding:9px 14px}
+    thead th:last-child{text-align:right}
+    tbody td{padding:8px 14px;font-size:13.5px;border-bottom:1px solid #ddd}
+    tbody td:last-child{text-align:right;font-weight:700;color:#115235}
+    tbody tr:nth-child(even){background:#f5f9f6}
+    .note{font-size:10.5px;color:#777;font-style:italic;margin-top:8px}
+    @media print{@page{size:A4;margin:10mm 14mm}body{padding:0}}
+  </style></head><body>
+  <div class="header">
+    <div class="brand">
+      <div class="brand-mark">D</div>
+      <div><h1>Divya Auto Hub</h1><div class="tag">Authorized Bajaj Dealer</div></div>
+    </div>
+    <div class="company">
+      <strong>Divya Auto Hub Pvt. Ltd.</strong>
+      Maharajgunj-03, Chakrapath, Kathmandu, Nepal<br>
+      01-4533133 / 9801204448<br>
+      divyautohub@gmail.com
+    </div>
+  </div>
+  ${dateVal?`<div class="date">Effective: ${escapeHtml(dateVal)}</div>`:''}
+  <table>
+    <thead><tr><th style="width:36px">#</th><th>Model</th><th>Retail Price (NPR)</th></tr></thead>
+    <tbody>${rowsHtml}</tbody>
+  </table>
+  <div class="note">All prices in Nepali Rupees (NPR), ex-showroom retail price. Subject to change without prior notice.</div>
+  <script>window.onload=function(){window.print();window.onafterprint=function(){window.close();};}<\/script>
+  </body></html>`;
+  const w=window.open('','_blank');
+  w.document.write(html);
+  w.document.close();
 }
 
 function populateModelSelects(){
@@ -4367,7 +4566,7 @@ function showPage(name,el){
   document.getElementById('page-'+name).classList.add('active');
   el.classList.add('active');
   currentPage=name;
-  const titles={stock:'Bike Stock',sales:'Sales Record',bookings:'Customer Bookings',delivery:'Bike Delivery Sheet',quotation:'Bike Quotation',['test-ride']:'Test Ride Form',['gift-coupon']:'Accessories Gift Coupon',['exchange-doc']:'Exchange Bike Document',['file-converter']:'File Converter',['emi-calc']:'Hulas EMI Calculator',receipt:'Cash Receipt',['receipt-ledger']:'Receipt Ledger',voucher:'Payment Voucher',['voucher-ledger']:'Voucher Ledger',valuation:'Valuation Sheet',['valuation-ledger']:'Valuation Ledger',dashboard:'Dashboard',calendar:'Nepali Calendar'};
+  const titles={stock:'Bike Stock',sales:'Sales Record',bookings:'Customer Bookings',delivery:'Bike Delivery Sheet',quotation:'Bike Quotation',['price-list']:'Bajaj Price List',['test-ride']:'Test Ride Form',['gift-coupon']:'Accessories Gift Coupon',['exchange-doc']:'Exchange Bike Document',['file-converter']:'File Converter',['emi-calc']:'Hulas EMI Calculator',receipt:'Cash Receipt',['receipt-ledger']:'Receipt Ledger',voucher:'Payment Voucher',['voucher-ledger']:'Voucher Ledger',valuation:'Valuation Sheet',['valuation-ledger']:'Valuation Ledger',dashboard:'Dashboard',calendar:'Nepali Calendar'};
   document.getElementById('page-title').textContent=titles[name];
   // mobile page bar sync
   const mobTitle=document.getElementById('mob-page-title');
@@ -4376,7 +4575,7 @@ function showPage(name,el){
   if(mobTitle) mobTitle.textContent=titles[name];
   if(mobBar) mobBar.style.display=window.innerWidth<=768?'flex':'none';
   const btn=document.getElementById('add-btn');
-  if(name==='delivery'||name==='quotation'||name==='test-ride'||name==='gift-coupon'||name==='exchange-doc'||name==='file-converter'||name==='emi-calc'||name==='dashboard'||name==='receipt'||name==='receipt-ledger'||name==='voucher'||name==='voucher-ledger'||name==='valuation'||name==='valuation-ledger'||name==='calendar'){
+  if(name==='delivery'||name==='quotation'||name==='price-list'||name==='test-ride'||name==='gift-coupon'||name==='exchange-doc'||name==='file-converter'||name==='emi-calc'||name==='dashboard'||name==='receipt'||name==='receipt-ledger'||name==='voucher'||name==='voucher-ledger'||name==='valuation'||name==='valuation-ledger'||name==='calendar'){
     btn.style.display='none';
     if(mobAddBtn) mobAddBtn.style.display='none';
   } else {
@@ -4385,6 +4584,7 @@ function showPage(name,el){
     if(mobAddBtn){ mobAddBtn.style.display='flex'; }
   }
   if(name==='dashboard')renderDashboard();
+  if(name==='price-list')renderPriceListPage();
   if(name==='receipt-ledger')renderReceiptLedger();
   if(name==='voucher-ledger')renderVoucherLedger();
   if(name==='valuation-ledger')renderValuationLedger();
