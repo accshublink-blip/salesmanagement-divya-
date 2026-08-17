@@ -2443,6 +2443,10 @@ try{
               <input class="val-line" id="val-old-model" placeholder="">
             </div>
             <div class="val-field-row">
+              <span class="val-label">Model Year:</span>
+              <input class="val-line" id="val-old-year" placeholder="e.g. 2022">
+            </div>
+            <div class="val-field-row">
               <span class="val-label">Bike No.:</span>
               <input class="val-line" id="val-old-bikeno" placeholder="" style="text-transform:uppercase" oninput="valCheckDuplicate()">
             </div>
@@ -2453,6 +2457,16 @@ try{
             <div class="val-field-row">
               <span class="val-label">Condition</span>
               <input class="val-line" id="val-condition" placeholder="">
+            </div>
+            <div class="val-field-row">
+              <span class="val-label">Mode of Purchase:</span>
+              <select class="val-line" id="val-mode-purchase" style="border-bottom:1.5px solid #555;border-top:none;border-left:none;border-right:none;padding:1px 4px;border-radius:0;font-size:13px;background:transparent">
+                <option value="">-- Select --</option>
+                <option value="Cash">Cash</option>
+                <option value="Finance">Finance</option>
+                <option value="Cash + Finance">Cash + Finance</option>
+                <option value="Exchange">Exchange</option>
+              </select>
             </div>
           </div>
           <div class="val-field-row">
@@ -2559,9 +2573,9 @@ try{
             <table id="val-ledger-table">
               <thead><tr>
                 <th>S.N.</th><th>Sheet No.</th><th>Date</th><th>Customer</th><th>Phone</th>
-                <th>Old Bike Model</th><th>Bike No.</th><th>KM Run</th><th>Condition</th>
+                <th>Old Bike Model</th><th>Model Year</th><th>Bike No.</th><th>KM Run</th><th>Condition</th>
                 <th style="text-align:right">Expected Val.</th><th style="text-align:right">Old Bike Val.</th>
-                <th>Sanakhat</th><th>Tax</th><th>Exchange With</th><th style="text-align:center">Actions</th>
+                <th>Sanakhat</th><th>Tax</th><th>Mode of Purchase</th><th>Exchange With</th><th style="text-align:center">Actions</th>
               </tr></thead>
               <tbody id="val-ledger-body"></tbody>
             </table>
@@ -2582,11 +2596,13 @@ try{
               <th style="border:1px solid #ccc;padding:4px 6px">Customer</th>
               <th style="border:1px solid #ccc;padding:4px 6px">Phone</th>
               <th style="border:1px solid #ccc;padding:4px 6px">Old Bike</th>
+              <th style="border:1px solid #ccc;padding:4px 6px">Model Year</th>
               <th style="border:1px solid #ccc;padding:4px 6px">Bike No.</th>
               <th style="border:1px solid #ccc;padding:4px 6px;text-align:right">Expected</th>
               <th style="border:1px solid #ccc;padding:4px 6px;text-align:right">Valuation</th>
               <th style="border:1px solid #ccc;padding:4px 6px">Sanakhat</th>
               <th style="border:1px solid #ccc;padding:4px 6px">Tax</th>
+              <th style="border:1px solid #ccc;padding:4px 6px">Mode of Purchase</th>
               <th style="border:1px solid #ccc;padding:4px 6px">Exchange With</th>
             </tr></thead>
             <tbody id="val-ledger-print-body"></tbody>
@@ -6750,13 +6766,14 @@ function clearValuationForm(){
   const valDupeBanner=document.getElementById('val-dupe-banner');
   if(valDupeBanner){valDupeBanner.style.display='none';delete valDupeBanner.dataset.editId;}
   ['val-sheet-no','val-bill-no','val-date','val-company','val-cust-name','val-cust-addr','val-cust-phone',
-   'val-old-model','val-old-bikeno','val-km-run','val-condition','val-expected','val-old-valuation',
+   'val-old-model','val-old-year','val-old-bikeno','val-km-run','val-condition','val-expected','val-old-valuation',
    'val-in-words','val-exchange-by','val-exchange-with'].forEach(id=>{
     const el=document.getElementById(id);if(el)el.value='';
   });
   const comp=document.getElementById('val-company');if(comp)comp.value='Divya Auto Hub Pvt. Ltd.';
   const sanak=document.getElementById('val-sanakhat');if(sanak)sanak.value='';
   const tax=document.getElementById('val-bike-tax');if(tax)tax.value='';
+  const modeP=document.getElementById('val-mode-purchase');if(modeP)modeP.value='';
   // Auto-fill today's BS date
   setValuationTodayDate();
   // Auto-fill next sheet no
@@ -6798,6 +6815,7 @@ async function saveValuationToLedger(){
     custAddr:document.getElementById('val-cust-addr').value.trim(),
     custPhone:document.getElementById('val-cust-phone').value.trim(),
     oldModel:document.getElementById('val-old-model').value.trim(),
+    oldYear:document.getElementById('val-old-year').value.trim(),
     oldBikeNo:document.getElementById('val-old-bikeno').value.trim(),
     kmRun:document.getElementById('val-km-run').value.trim(),
     condition:document.getElementById('val-condition').value.trim(),
@@ -6807,6 +6825,7 @@ async function saveValuationToLedger(){
     exchangeBy:document.getElementById('val-exchange-by').value.trim(),
     sanakhat:document.getElementById('val-sanakhat').value,
     bikeTax:document.getElementById('val-bike-tax').value,
+    modePurchase:document.getElementById('val-mode-purchase').value,
     exchangeWith:document.getElementById('val-exchange-with').value.trim(),
     savedAt:new Date().toISOString()
   };
@@ -6834,7 +6853,7 @@ function renderValuationLedger(){
   if(countEl)countEl.textContent=filtered.length+' entries';
   const tbody=document.getElementById('val-ledger-body');
   if(!tbody)return;
-  if(!filtered.length){tbody.innerHTML='<tr><td colspan="15" style="text-align:center;padding:2rem;color:#9ca3af">No valuation sheets saved yet</td></tr>';return;}
+  if(!filtered.length){tbody.innerHTML='<tr><td colspan="17" style="text-align:center;padding:2rem;color:#9ca3af">No valuation sheets saved yet</td></tr>';return;}
   const sanakLabel=v=>v==='done'?'<span class="sanak-pill sanak-done">✅ Done</span>':v==='pending'?'<span class="sanak-pill sanak-pending">⏳ Pending</span>':'<span class="sanak-pill sanak-na">—</span>';
   const taxLabel=v=>v==='clear'||v==='done'?`<span class="sanak-pill sanak-clear">✅ ${v==='clear'?'Clear':'Done'}</span>`:v==='remaining'?'<span class="sanak-pill sanak-remaining">⚠️ Remaining</span>':v==='pending'?'<span class="sanak-pill sanak-pending">⏳ Pending</span>':'<span class="sanak-pill sanak-na">—</span>';
   tbody.innerHTML=filtered.map((v,i)=>`<tr>
@@ -6844,6 +6863,7 @@ function renderValuationLedger(){
     <td><strong>${v.custName}</strong><br><span style="font-size:11px;color:var(--gray-400)">${v.custAddr||''}</span></td>
     <td>${v.custPhone||'—'}</td>
     <td>${v.oldModel||'—'}</td>
+    <td>${v.oldYear||'—'}</td>
     <td class="mono">${v.oldBikeNo||'—'}</td>
     <td>${v.kmRun||'—'}</td>
     <td>${v.condition||'—'}</td>
@@ -6851,6 +6871,7 @@ function renderValuationLedger(){
     <td style="text-align:right;font-weight:600;color:var(--green)">${v.oldBikeVal||'—'}</td>
     <td>${sanakLabel(v.sanakhat)}</td>
     <td>${taxLabel(v.bikeTax)}</td>
+    <td>${v.modePurchase||'—'}</td>
     <td>${v.exchangeWith||'—'}</td>
     <td>
       <div class="action-btns">
@@ -6871,13 +6892,14 @@ function loadValuationToForm(i){
   set('val-sheet-no',v.sheetNo);set('val-bill-no',v.billNo);set('val-date',v.date);
   set('val-company',v.company||'Divya Auto Hub Pvt. Ltd.');
   set('val-cust-name',v.custName);set('val-cust-addr',v.custAddr);set('val-cust-phone',v.custPhone);
-  set('val-old-model',v.oldModel);set('val-old-bikeno',v.oldBikeNo);
+  set('val-old-model',v.oldModel);set('val-old-year',v.oldYear);set('val-old-bikeno',v.oldBikeNo);
   set('val-km-run',v.kmRun);set('val-condition',v.condition);
   set('val-expected',v.expectedVal);set('val-old-valuation',v.oldBikeVal);
   set('val-in-words',v.inWords);set('val-exchange-by',v.exchangeBy);
   set('val-exchange-with',v.exchangeWith);
   const sanak=document.getElementById('val-sanakhat');if(sanak)sanak.value=v.sanakhat||'';
   const tax=document.getElementById('val-bike-tax');if(tax)tax.value=v.bikeTax||'';
+  const modeP=document.getElementById('val-mode-purchase');if(modeP)modeP.value=v.modePurchase||'';
   // Mark this record as the one being edited so Save updates it instead of creating a duplicate
   document.getElementById('val-dupe-banner').dataset.editId=v.id;
   showPage('valuation',document.querySelector('.nav-item[data-page="valuation"]'));
@@ -6894,10 +6916,10 @@ async function deleteValuationSheet(i){
 
 function exportValLedgerExcel(){
   const sortedV=[...valuationSheets].sort((a,b)=>dateSortKey(b.date).localeCompare(dateSortKey(a.date)));
-  const headers=['S.N.','Sheet No.','Date','Bill No.','Customer Name','Address','Phone','Old Bike Model','Bike No.','KM Run','Condition','Expected Valuation','Old Bike Valuation','In Words','Sanakhat','Old Bike Tax','Exchange With'];
-  const rows=sortedV.map((v,i)=>[i+1,v.sheetNo,v.date,v.billNo,v.custName,v.custAddr,v.custPhone,v.oldModel,v.oldBikeNo,v.kmRun,v.condition,v.expectedVal,v.oldBikeVal,v.inWords,v.sanakhat,v.bikeTax,v.exchangeWith]);
+  const headers=['S.N.','Sheet No.','Date','Bill No.','Customer Name','Address','Phone','Old Bike Model','Model Year','Bike No.','KM Run','Condition','Expected Valuation','Old Bike Valuation','In Words','Sanakhat','Old Bike Tax','Mode of Purchase','Exchange With'];
+  const rows=sortedV.map((v,i)=>[i+1,v.sheetNo,v.date,v.billNo,v.custName,v.custAddr,v.custPhone,v.oldModel,v.oldYear,v.oldBikeNo,v.kmRun,v.condition,v.expectedVal,v.oldBikeVal,v.inWords,v.sanakhat,v.bikeTax,v.modePurchase,v.exchangeWith]);
   const ws=XLSX.utils.aoa_to_sheet([headers,...rows]);
-  ws['!cols']=[{wch:6},{wch:10},{wch:14},{wch:14},{wch:22},{wch:20},{wch:14},{wch:24},{wch:16},{wch:10},{wch:12},{wch:16},{wch:16},{wch:20},{wch:12},{wch:12},{wch:16}];
+  ws['!cols']=[{wch:6},{wch:10},{wch:14},{wch:14},{wch:22},{wch:20},{wch:14},{wch:24},{wch:10},{wch:16},{wch:10},{wch:12},{wch:16},{wch:16},{wch:20},{wch:12},{wch:12},{wch:16},{wch:16}];
   const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Valuation Ledger');
   XLSX.writeFile(wb,'valuation-ledger.xlsx');toast('Excel downloaded ✓');
 }
@@ -6914,11 +6936,13 @@ function printValLedger(){
     <td style="border:1px solid #ccc;padding:4px 6px">${v.custName||''}</td>
     <td style="border:1px solid #ccc;padding:4px 6px">${v.custPhone||''}</td>
     <td style="border:1px solid #ccc;padding:4px 6px">${v.oldModel||''}</td>
+    <td style="border:1px solid #ccc;padding:4px 6px">${v.oldYear||''}</td>
     <td style="border:1px solid #ccc;padding:4px 6px">${v.oldBikeNo||''}</td>
     <td style="border:1px solid #ccc;padding:4px 6px;text-align:right">${v.expectedVal||''}</td>
     <td style="border:1px solid #ccc;padding:4px 6px;text-align:right">${v.oldBikeVal||''}</td>
     <td style="border:1px solid #ccc;padding:4px 6px">${v.sanakhat||''}</td>
     <td style="border:1px solid #ccc;padding:4px 6px">${v.bikeTax||''}</td>
+    <td style="border:1px solid #ccc;padding:4px 6px">${v.modePurchase||''}</td>
     <td style="border:1px solid #ccc;padding:4px 6px">${v.exchangeWith||''}</td>
   </tr>`).join('');
   const printArea=document.getElementById('val-ledger-print-area');
@@ -7988,9 +8012,9 @@ function printValuationTwoCopies(){
   const v={
     sheetNo:g('val-sheet-no'), billNo:g('val-bill-no'), date:g('val-date'), company:g('val-company')||'Divya Auto Hub Pvt. Ltd.',
     custName:g('val-cust-name'), custAddr:g('val-cust-addr'), custPhone:g('val-cust-phone'),
-    oldModel:g('val-old-model'), oldBikeNo:g('val-old-bikeno'), kmRun:g('val-km-run'), condition:g('val-condition'),
+    oldModel:g('val-old-model'), oldYear:g('val-old-year'), oldBikeNo:g('val-old-bikeno'), kmRun:g('val-km-run'), condition:g('val-condition'),
     expectedVal:g('val-expected'), oldBikeVal:g('val-old-valuation'), inWords:g('val-in-words'), exchangeBy:g('val-exchange-by'),
-    sanakhat:sanakMap[g('val-sanakhat')]||'—', bikeTax:taxMap[g('val-bike-tax')]||'—', exchangeWith:g('val-exchange-with')
+    sanakhat:sanakMap[g('val-sanakhat')]||'—', bikeTax:taxMap[g('val-bike-tax')]||'—', modePurchase:g('val-mode-purchase')||'—', exchangeWith:g('val-exchange-with')
   };
   const logoPrev=document.getElementById('val-logo-preview');
   const logoSrc=(logoPrev&&logoPrev.style.display!=='none'&&logoPrev.src)?logoPrev.src:'';
@@ -8020,6 +8044,7 @@ function printValuationTwoCopies(){
     <div class="sec-title">OLD BIKE DETAIL:-</div>
     <div class="grid2">
       <div class="row"><span class="lbl">Model:</span><span class="val">${esc(v.oldModel)}</span></div>
+      <div class="row"><span class="lbl">Model Year:</span><span class="val">${esc(v.oldYear)}</span></div>
       <div class="row"><span class="lbl">Bike No.:</span><span class="val">${esc(v.oldBikeNo)}</span></div>
       <div class="row"><span class="lbl">KM Run:</span><span class="val">${esc(v.kmRun)}</span></div>
       <div class="row"><span class="lbl">Condition:</span><span class="val">${esc(v.condition)}</span></div>
@@ -8031,6 +8056,7 @@ function printValuationTwoCopies(){
     <div class="status-box">
       <div class="row" style="margin-bottom:0"><span class="lbl" style="min-width:110px">Sanakhat (सनाखत):</span><span class="val">${v.sanakhat}</span></div>
       <div class="row" style="margin-bottom:0"><span class="lbl" style="min-width:100px">Old Bike Tax:</span><span class="val">${v.bikeTax}</span></div>
+      <div class="row" style="margin-bottom:0"><span class="lbl" style="min-width:120px">Mode of Purchase:</span><span class="val">${v.modePurchase}</span></div>
     </div>
     <div class="exch-row"><span class="exch-lbl">EXCHANGE WITH</span><span class="val">${esc(v.exchangeWith)}</span></div>
     <div class="sig-row">
@@ -8482,12 +8508,12 @@ function valLoadExisting(){
   const set=(id,val)=>{const el=document.getElementById(id);if(el)el.value=val||'';};
   set('val-sheet-no',v.sheetNo); set('val-bill-no',v.billNo); set('val-date',v.date);
   set('val-company',v.company); set('val-cust-name',v.custName); set('val-cust-addr',v.custAddr);
-  set('val-cust-phone',v.custPhone); set('val-old-model',v.oldModel); set('val-old-bikeno',v.oldBikeNo);
+  set('val-cust-phone',v.custPhone); set('val-old-model',v.oldModel); set('val-old-year',v.oldYear); set('val-old-bikeno',v.oldBikeNo);
   set('val-km-run',v.kmRun); set('val-condition',v.condition); set('val-expected',v.expectedVal);
   set('val-old-valuation',v.oldBikeVal); set('val-in-words',v.inWords);
   set('val-exchange-by',v.exchangeBy); set('val-exchange-with',v.exchangeWith);
   const selSet=(id,val)=>{const el=document.getElementById(id);if(el)el.value=val||'';};
-  selSet('val-sanakhat',v.sanakhat); selSet('val-bike-tax',v.bikeTax);
+  selSet('val-sanakhat',v.sanakhat); selSet('val-bike-tax',v.bikeTax); selSet('val-mode-purchase',v.modePurchase);
   // Store edit reference
   document.getElementById('val-dupe-banner').dataset.editId=v.id;
   valHideDupe();
