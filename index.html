@@ -2689,7 +2689,7 @@ try{
   <div class="modal">
     <div class="modal-head"><h2 id="stock-modal-title">Add Bike to Stock</h2><button class="modal-close" onclick="closeModal('stock')">✕</button></div>
     <div class="modal-body">
-      <div id="stock-dupe-banner" class="dupe-banner">
+      <div id="stock-dupe-banner" class="dupe-banner" style="display:none;">
         <div class="dupe-title">⚠️ Duplicate Stock Detected!</div>
         <div class="dupe-info" id="stock-dupe-info"></div>
         <div class="dupe-btns">
@@ -2748,7 +2748,7 @@ try{
   <div class="modal" style="max-width:640px">
     <div class="modal-head"><h2 id="sale-modal-title">Record Sale</h2><button class="modal-close" onclick="closeModal('sale')">✕</button></div>
     <div class="modal-body">
-      <div id="sale-dupe-banner" class="dupe-banner">
+      <div id="sale-dupe-banner" class="dupe-banner" style="display:none;">
         <div class="dupe-title">⚠️ Duplicate Sale Detected!</div>
         <div class="dupe-info" id="sale-dupe-info"></div>
         <div class="dupe-btns">
@@ -2931,7 +2931,7 @@ try{
   <div class="modal">
     <div class="modal-head"><h2 id="book-modal-title">Add Booking</h2><button class="modal-close" onclick="closeModal('booking')">✕</button></div>
     <div class="modal-body">
-      <div id="book-dupe-banner" class="dupe-banner">
+      <div id="book-dupe-banner" class="dupe-banner" style="display:none;">
         <div class="dupe-title">⚠️ Duplicate Booking Detected!</div>
         <div class="dupe-info" id="book-dupe-info"></div>
         <div class="dupe-btns">
@@ -4694,7 +4694,7 @@ async function saveStock(){
   snapModelInputOnBlur('f-model');
   const model=document.getElementById('f-model').value.trim();
   if(!model){alert('Model choose garus!');return;}
-  if(document.getElementById('stock-dupe-banner').style.display!=='none'){
+  if(_stockDupeMatch && document.getElementById('stock-dupe-banner').style.display!=='none'){
     if(!confirm('⚠️ Duplicate stock detected cha!\nPhir pani save garne?'))return;
   }
   const qty=Math.max(1,parseInt(document.getElementById('f-qty').value)||1);
@@ -5101,7 +5101,7 @@ function resetSaleForm(){
 async function saveSale(){
   const cust=toTitleCase(document.getElementById('fs-cust').value.trim());
   if(!cust){alert('Customer naam raakhnus!');return;}
-  if(document.getElementById('sale-dupe-banner').style.display!=='none'){
+  if(_saleDupeMatch && document.getElementById('sale-dupe-banner').style.display!=='none'){
     if(!confirm('⚠️ Duplicate sale detected cha!\nPhir pani save garne?'))return;
   }
   snapModelInputOnBlur('fs-model');
@@ -5366,7 +5366,7 @@ function resetBookingForm(){
 async function saveBooking(){
   const name=document.getElementById('fb-name').value.trim();
   if(!name){alert('Customer naam raakhnus!');return;}
-  if(document.getElementById('book-dupe-banner').style.display!=='none'){
+  if(_bookDupeMatch && document.getElementById('book-dupe-banner').style.display!=='none'){
     if(!confirm('⚠️ Duplicate booking detected cha!\nPhir pani save garne?'))return;
   }
   snapModelInputOnBlur('fb-model');
