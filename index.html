@@ -4629,6 +4629,22 @@ function openModal(n){
 function closeModal(n){document.getElementById('modal-'+n).classList.remove('open');}
 document.querySelectorAll('.overlay').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('open');}));
 
+// Text copy-paste (right-click paste, long-press paste on mobile, etc.) doesn't
+// always trigger a normal 'input' event in every browser/webview, which means
+// live handlers wired via oninput (duplicate checks, auto-uppercase, auto price,
+// autofill suggestions, etc.) can silently fail to fire when a value is pasted
+// instead of typed. This listens for paste on any text field/textarea across the
+// whole app and re-fires a real 'input' event right after the pasted text lands,
+// so every existing oninput handler runs exactly as if the user had typed it.
+document.addEventListener('paste',function(e){
+  const t=e.target;
+  if(!t) return;
+  const tag=t.tagName;
+  if(tag==='INPUT'||tag==='TEXTAREA'){
+    setTimeout(()=>{ t.dispatchEvent(new Event('input',{bubbles:true})); },0);
+  }
+},true);
+
 // ══════════════════════════════════════════════
 //  STOCK CRUD
 // ══════════════════════════════════════════════
