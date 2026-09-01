@@ -8820,13 +8820,55 @@ function savePurchaseEntry(){
 // ── Delete Entry ──
 function deletePurchaseEntry(idx){
   if(!isAdmin()){toast('❌ Delete: Admin le matra garna milne cha');return;}
-  if(!confirm('Yo purchase entry delete garne?')) return;
   loadPurchases();
-  purchases.splice(idx,1);
-  savePurchases();
-  renderPurchase();
-  renderPurchaseMetrics();
-  toast('Purchase entry deleted.');
+  const p=purchases[idx];
+  if(!p) return;
+
+  // ── Linked stock check garera confirm dekhau ──
+  (async()=>{
+    if(!stock||!stock.length) stock = await dbGet('dah2-stock') || [];
+    const linked = stock.filter(s=>
+      (p.id && s.purId===p.id) ||
+      (!s.purId && p.chassis && s.chassisno && s.chassisno===p.chassis) ||
+      (!s.purId && p.engine && s.engineno && s.engineno===p.engine)
+    );
+    const soldCount = linked.filter(s=>s.status==='out').length;
+    const removableCount = linked.length - soldCount;
+
+    let msg='Yo purchase entry delete garne?';
+    if(linked.length){
+      msg += `\n\nLinked stock: ${linked.length} bike.`;
+      if(removableCount>0) msg += ` ${removableCount} bike stock bata pani delete huncha.`;
+      if(soldCount>0) msg += `\n⚠️ ${soldCount} bike already SOLD bhaisakeko cha — tyo stock bata delete hudaina, purchase-link matra hataucha.`;
+    }
+    if(!confirm(msg)) return;
+
+    // purchase entry hatau (fresh index nikalera, race-condition bachau)
+    loadPurchases();
+    const freshIdx = purchases.findIndex(x=>x.id===p.id);
+    if(freshIdx>=0) purchases.splice(freshIdx,1); else purchases.splice(idx,1);
+    savePurchases();
+
+    // linked stock update: sold bhaisakeka bahek sabai stock bata hataau
+    if(linked.length){
+      stock = stock.filter(s=>{
+        const isLinked = linked.includes(s);
+        if(!isLinked) return true;
+        if(s.status==='out'){
+          delete s.purId; // sold bike rakhne, tara purchase-link hataune
+          return true;
+        }
+        return false; // not sold — stock bata hataune
+      });
+      await dbSet('dah2-stock', stock);
+      populateModelSelects();
+      render();
+    }
+
+    renderPurchase();
+    renderPurchaseMetrics();
+    toast(removableCount>0 ? `Purchase + ${removableCount} stock bike deleted ✓` : 'Purchase entry deleted.');
+  })();
 }
 
 // ── View/Print Entry ──
