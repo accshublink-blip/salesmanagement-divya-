@@ -1509,6 +1509,7 @@ try{
                 <th>Model</th>
                 <th style="width:150px">Category</th>
                 <th style="width:160px">Retail Price (NPR)</th>
+                <th style="width:160px">Insurance Premium (NPR)</th>
                 <th style="width:50px" class="no-print"></th>
               </tr>
             </thead>
@@ -3099,15 +3100,26 @@ try{
 // price notices). Edit prices from the Price List page in-app; that page writes
 // back into this object and persists overrides to dah2-price-list.
 const PRICE_MAP = {
-  'Platina 100 ES BS6':259900,'Pulsar 125 Neon BS6':310900,
-  'Pulsar 150 SD BS6':369900,'Pulsar 150 TD BS6':386900,
-  'Pulsar N 125 BS6':322900,'Pulsar N 150 BS6':399900,
-  'Pulsar N 160 DC ABS BS6':443900,'Pulsar N 250 DC ABS BS6':529900,
-  'Pulsar 220 F ABS FI BS6':459900,'Pulsar 125 NS ABS FI BS6':347900,
-  'Pulsar 200 NS FI DC ABS BS6':475900,'Pulsar 400 NS BS6':619900,
+  'Platina 100 ES BS6':261900,'Pulsar 125 Neon BS6':314900,
+  'Pulsar 150 SD BS6':369900,'Pulsar 150 TD BS6':390900,
+  'Pulsar N 125 BS6':326900,'Pulsar N 150 BS6':403900,
+  'Pulsar N 160 DC ABS BS6':447900,'Pulsar N 250 DC ABS BS6':532900,
+  'Pulsar 220 F ABS FI BS6':464900,'Pulsar 125 NS ABS FI BS6':351900,
+  'Pulsar 200 NS FI DC ABS BS6':479900,'Pulsar 400 NS BS6':629900,
   'Avenger 160 Street ABS':389900,'Avenger 220 Cruise':432900,
-  'Dominar 400 ABS BS6':656900,'Chetak 3501':379900,
-  'Chetak C2501':281900,'Chetak C3503':339900
+  'Dominar 400 ABS BS6':663900,'Chetak 3501':389900,
+  'Chetak C2501':281900,'Chetak C3503':349900
+};
+// Third-party insurance premium (NPR) per model — shown alongside price on the Price List page.
+const PREMIUM_MAP = {
+  'Platina 100 ES BS6':6214.74,'Pulsar 125 Neon BS6':7068.18,
+  'Pulsar 150 SD BS6':7953.81,'Pulsar 150 TD BS6':8291.97,
+  'Pulsar N 125 BS6':7261.41,'Pulsar N 150 BS6':8501.30,
+  'Pulsar N 160 DC ABS BS6':9435.81,'Pulsar N 250 DC ABS BS6':10804.52,
+  'Pulsar 220 F ABS FI BS6':9709.55,'Pulsar 125 NS ABS FI BS6':7663.97,
+  'Pulsar 200 NS FI DC ABS BS6':9951.07,'Pulsar 400 NS BS6':12592.46,
+  'Dominar 400 ABS BS6':13139.95,'Chetak 3501':7324.00,
+  'Chetak C2501':5974.00,'Chetak C3503':6824.00
 };
 const CAT_MAP = {
   'Platina 100 ES BS6':'Economy','Pulsar 125 Neon BS6':'Commuter',
@@ -3887,6 +3899,8 @@ async function loadPriceListOverrides(){
       Object.assign(PRICE_MAP, saved.priceMap);
       Object.keys(CAT_MAP).forEach(k=>delete CAT_MAP[k]);
       Object.assign(CAT_MAP, saved.catMap||{});
+      Object.keys(PREMIUM_MAP).forEach(k=>delete PREMIUM_MAP[k]);
+      Object.assign(PREMIUM_MAP, saved.premiumMap||{});
       pricelistEffectiveDate = saved.effectiveDate||'';
     }
   }catch(e){ console.warn('price list load failed',e); }
@@ -3905,6 +3919,7 @@ function renderPriceListPage(){
       <td><input class="pl-input pl-model" value="${escapeHtml(m)}"></td>
       <td><input class="pl-input pl-cat" value="${escapeHtml(CAT_MAP[m]||'')}" placeholder="Category"></td>
       <td><input class="pl-input pl-price" type="number" value="${PRICE_MAP[m]}" placeholder="0"></td>
+      <td><input class="pl-input pl-premium" type="number" step="0.01" value="${PREMIUM_MAP[m]!=null?PREMIUM_MAP[m]:''}" placeholder="0.00"></td>
       <td class="no-print"><button class="pl-del-btn" onclick="plDeleteRow(this)" title="Delete">🗑️</button></td>
     </tr>
   `).join('');
@@ -3918,6 +3933,7 @@ function plAddRow(){
     <td><input class="pl-input pl-model" placeholder="e.g. Pulsar 250 F ABS BS6"></td>
     <td><input class="pl-input pl-cat" placeholder="Category"></td>
     <td><input class="pl-input pl-price" type="number" placeholder="0"></td>
+    <td><input class="pl-input pl-premium" type="number" step="0.01" placeholder="0.00"></td>
     <td class="no-print"><button class="pl-del-btn" onclick="plDeleteRow(this)" title="Delete">🗑️</button></td>
   `;
   tbody.appendChild(tr);
@@ -3932,21 +3948,25 @@ function plDeleteRow(btn){
 
 function savePriceList(){
   const rows=document.querySelectorAll('#pricelist-tbody tr');
-  const newPriceMap={}, newCatMap={};
+  const newPriceMap={}, newCatMap={}, newPremiumMap={};
   rows.forEach(r=>{
     const model=r.querySelector('.pl-model').value.trim();
     if(!model) return;
     const cat=r.querySelector('.pl-cat').value.trim();
     const price=parseInt(r.querySelector('.pl-price').value)||0;
+    const premium=parseFloat(r.querySelector('.pl-premium').value)||0;
     newPriceMap[model]=price;
     newCatMap[model]=cat||'—';
+    newPremiumMap[model]=premium;
   });
   Object.keys(PRICE_MAP).forEach(k=>delete PRICE_MAP[k]);
   Object.assign(PRICE_MAP,newPriceMap);
   Object.keys(CAT_MAP).forEach(k=>delete CAT_MAP[k]);
   Object.assign(CAT_MAP,newCatMap);
+  Object.keys(PREMIUM_MAP).forEach(k=>delete PREMIUM_MAP[k]);
+  Object.assign(PREMIUM_MAP,newPremiumMap);
   pricelistEffectiveDate=(document.getElementById('pl-effective-date')||{}).value||'';
-  dbSet('dah2-price-list',{priceMap:newPriceMap,catMap:newCatMap,effectiveDate:pricelistEffectiveDate});
+  dbSet('dah2-price-list',{priceMap:newPriceMap,catMap:newCatMap,premiumMap:newPremiumMap,effectiveDate:pricelistEffectiveDate});
   populateModelSelects();
   renderPriceListPage();
   toast('✅ Price list saved! Quotation ra stock ma pani update vayo.');
@@ -3955,10 +3975,11 @@ function savePriceList(){
 function printPriceList(){
   const rows=[...document.querySelectorAll('#pricelist-tbody tr')].map(r=>({
     model:r.querySelector('.pl-model').value.trim(),
-    price:parseInt(r.querySelector('.pl-price').value)||0
+    price:parseInt(r.querySelector('.pl-price').value)||0,
+    premium:parseFloat(r.querySelector('.pl-premium').value)||0
   })).filter(r=>r.model);
   const dateVal=(document.getElementById('pl-effective-date')||{}).value||'';
-  const rowsHtml=rows.map((r,i)=>`<tr><td>${i+1}</td><td>${escapeHtml(r.model)}</td><td>${fmt(r.price)}</td></tr>`).join('');
+  const rowsHtml=rows.map((r,i)=>`<tr><td>${i+1}</td><td>${escapeHtml(r.model)}</td><td>${fmt(r.price)}</td><td>${r.premium?fmt(r.premium):'—'}</td></tr>`).join('');
   const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Bajaj Price List — Divya Auto Hub</title>
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
@@ -3994,7 +4015,7 @@ function printPriceList(){
   </div>
   ${dateVal?`<div class="date">Effective: ${escapeHtml(dateVal)}</div>`:''}
   <table>
-    <thead><tr><th style="width:36px">#</th><th>Model</th><th>Retail Price (NPR)</th></tr></thead>
+    <thead><tr><th style="width:36px">#</th><th>Model</th><th>Retail Price (NPR)</th><th>Insurance Premium (NPR)</th></tr></thead>
     <tbody>${rowsHtml}</tbody>
   </table>
   <div class="note">All prices in Nepali Rupees (NPR), ex-showroom retail price. Subject to change without prior notice.</div>
