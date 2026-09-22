@@ -474,6 +474,7 @@ tr:hover td { background: var(--gray-50); }
 .field-input, select.field-input { border: none; border-bottom: 1px solid var(--border); outline: none; font-size: 12px; color: var(--dark); font-family: inherit; background: transparent; flex: 1; padding: 2px 4px; min-width: 0; appearance: none; -webkit-appearance: none; cursor: text; }
 select.field-input { cursor: pointer; }
 .field-input:focus, select.field-input:focus { border-bottom-color: var(--accent); }
+.field-print-val { display: none; }
 .field-input.auto-filled { border-bottom-color: var(--green) !important; background: rgba(26,122,74,0.05) !important; }
 .mode-row { display: flex; gap: 20px; align-items: flex-start; flex-wrap: wrap; font-size: 12px; }
 .mode-item { display: flex; align-items: center; gap: 5px; }
@@ -653,6 +654,16 @@ select.field-input { cursor: pointer; }
   #delivery-doc input, #delivery-doc select,
   #quotation-doc input, #quotation-doc select,
   #test-ride-doc input, #test-ride-doc select { font-weight: 700 !important; color: #000 !important; border-bottom: 1px solid #555 !important; }
+  /* delivery sheet — filled text was getting clipped by the fixed input box width on print.
+     Hide the live <input>/<select> boxes and show a full, wrapping text mirror instead so
+     long values (address, reg. no, remarks etc.) always print completely. */
+  #delivery-doc input.field-input, #delivery-doc select.field-input { display: none !important; }
+  #delivery-doc .field-print-val {
+    display: inline-block !important; flex: 1; min-width: 0;
+    white-space: normal !important; word-break: break-word; overflow: visible !important;
+    font-weight: 700 !important; color: #000 !important; border-bottom: 1px solid #555 !important;
+    padding: 2px 4px; font-size: 12px; font-family: inherit; line-height: 1.3;
+  }
   #delivery-doc .field-label, #quotation-doc .field-label, #test-ride-doc .field-label,
   #delivery-doc .sig-label, #quotation-doc .sig-label, #test-ride-doc .sig-label { font-weight: 800 !important; color: #000 !important; }
   #delivery-doc .terms-list li, #quotation-doc .terms-list li,
@@ -2608,6 +2619,50 @@ try{
             </tr></thead>
             <tbody id="val-ledger-print-body"></tbody>
           </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ VALUATION VIEW MODAL ══ -->
+    <div class="overlay" id="modal-valuation-view">
+      <div class="modal" style="max-width:560px">
+        <div class="modal-head"><h2>Valuation Sheet Details</h2><button class="modal-close" onclick="closeModal('valuation-view')">✕</button></div>
+        <div class="modal-body">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--gray-100)">
+            <div>
+              <div style="font-size:17px;font-weight:600" id="vv-cust">—</div>
+              <div style="font-size:12px;color:var(--gray-500);margin-top:2px" id="vv-date">—</div>
+            </div>
+            <div style="text-align:right">
+              <div style="font-size:20px;font-weight:700;color:var(--green)" id="vv-old-valuation">—</div>
+              <div style="font-size:11.5px;color:var(--gray-500)">Old Bike Valuation</div>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px 16px;font-size:13px">
+            <div><div style="color:var(--gray-500);font-size:11.5px;margin-bottom:2px">Sheet No.</div><div id="vv-sheet-no" class="mono" style="font-weight:500">—</div></div>
+            <div><div style="color:var(--gray-500);font-size:11.5px;margin-bottom:2px">Bill No.</div><div id="vv-bill-no" class="mono" style="font-weight:500">—</div></div>
+            <div><div style="color:var(--gray-500);font-size:11.5px;margin-bottom:2px">Phone</div><div id="vv-phone" style="font-weight:500">—</div></div>
+            <div><div style="color:var(--gray-500);font-size:11.5px;margin-bottom:2px">Mode of Purchase</div><div id="vv-mode-purchase" style="font-weight:500">—</div></div>
+            <div style="grid-column:1/-1"><div style="color:var(--gray-500);font-size:11.5px;margin-bottom:2px">Address</div><div id="vv-addr" style="font-weight:500">—</div></div>
+            <div style="grid-column:1/-1;border-top:1px solid var(--gray-100);padding-top:12px;margin-top:2px">
+              <div style="font-weight:600;font-size:12px;color:var(--gray-600);margin-bottom:8px">🏍️ OLD BIKE</div>
+            </div>
+            <div><div style="color:var(--gray-500);font-size:11.5px;margin-bottom:2px">Model</div><div id="vv-old-model" style="font-weight:500">—</div></div>
+            <div><div style="color:var(--gray-500);font-size:11.5px;margin-bottom:2px">Model Year</div><div id="vv-old-year" style="font-weight:500">—</div></div>
+            <div><div style="color:var(--gray-500);font-size:11.5px;margin-bottom:2px">Bike No.</div><div id="vv-old-bikeno" class="mono" style="font-weight:500">—</div></div>
+            <div><div style="color:var(--gray-500);font-size:11.5px;margin-bottom:2px">KM Run</div><div id="vv-km-run" style="font-weight:500">—</div></div>
+            <div><div style="color:var(--gray-500);font-size:11.5px;margin-bottom:2px">Condition</div><div id="vv-condition" style="font-weight:500">—</div></div>
+            <div><div style="color:var(--gray-500);font-size:11.5px;margin-bottom:2px">Expected Valuation</div><div id="vv-expected" style="font-weight:500">—</div></div>
+            <div style="grid-column:1/-1"><div style="color:var(--gray-500);font-size:11.5px;margin-bottom:2px">Old Bike Valuation (In Words)</div><div id="vv-in-words" style="font-weight:500;font-style:italic">—</div></div>
+            <div><div style="color:var(--gray-500);font-size:11.5px;margin-bottom:2px">Sanakhat</div><div id="vv-sanakhat" style="font-weight:500">—</div></div>
+            <div><div style="color:var(--gray-500);font-size:11.5px;margin-bottom:2px">Bike Tax</div><div id="vv-bike-tax" style="font-weight:500">—</div></div>
+            <div><div style="color:var(--gray-500);font-size:11.5px;margin-bottom:2px">Exchange By</div><div id="vv-exchange-by" style="font-weight:500">—</div></div>
+            <div><div style="color:var(--gray-500);font-size:11.5px;margin-bottom:2px">Exchange With</div><div id="vv-exchange-with" style="font-weight:500">—</div></div>
+          </div>
+        </div>
+        <div class="modal-foot">
+          <button class="btn btn-blue" onclick="editValuationFromView()">✏ Edit</button>
+          <button class="btn btn-secondary" onclick="closeModal('valuation-view')">Close</button>
         </div>
       </div>
     </div>
@@ -6013,6 +6068,30 @@ function loadLogo(){
   }catch(e){}
 }
 
+// Build/update full-text print mirrors for every field-input inside the delivery sheet so
+// long values are never clipped by the input box width when printing / saving as PDF.
+function prepareDeliveryPrintMirrors(){
+  const doc=document.getElementById('delivery-doc');
+  if(!doc)return;
+  doc.querySelectorAll('input.field-input, select.field-input').forEach(el=>{
+    let mirror=el.nextElementSibling;
+    if(!mirror||!mirror.classList||!mirror.classList.contains('field-print-val')){
+      mirror=document.createElement('span');
+      mirror.className='field-print-val';
+      el.insertAdjacentElement('afterend',mirror);
+    }
+    let val='';
+    if(el.tagName==='SELECT'){
+      const opt=el.options[el.selectedIndex];
+      val=opt?opt.text:'';
+    }else{
+      val=el.value||'';
+    }
+    mirror.textContent=val.trim()?val:'—';
+  });
+}
+window.addEventListener('beforeprint',prepareDeliveryPrintMirrors);
+
 function saveDeliveryPDF(){
   const custName=document.getElementById('d-cust-name').value.trim();
   const model=document.getElementById('d-bike-model').value.trim();
@@ -6920,7 +6999,10 @@ function renderValuationLedger(){
     <td>${v.exchangeWith||'—'}</td>
     <td>
       <div class="action-btns">
-        <button class="icon-btn icon-btn-edit" title="Load to form" onclick="loadValuationToForm(${v.origIdx})">
+        <button class="icon-btn icon-btn-edit" title="View" onclick="viewValuationDetail(${v.origIdx})">
+          <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>
+        <button class="icon-btn icon-btn-edit" title="Load to form / Edit" onclick="loadValuationToForm(${v.origIdx})">
           <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
         </button>
         <button class="icon-btn icon-btn-del" title="Delete" onclick="deleteValuationSheet(${v.origIdx})">
@@ -6929,6 +7011,41 @@ function renderValuationLedger(){
       </div>
     </td>
   </tr>`).join('');
+}
+
+let _valViewIndex=null;
+function viewValuationDetail(i){
+  const v=valuationSheets[i];if(!v)return;
+  _valViewIndex=i;
+  const set=(id,val)=>{const el=document.getElementById(id);if(el)el.textContent=(val===undefined||val===null||val==='')?'—':val;};
+  set('vv-cust',v.custName);
+  set('vv-date',v.date);
+  set('vv-old-valuation',v.oldBikeVal?('NPR '+v.oldBikeVal):'—');
+  set('vv-sheet-no',v.sheetNo);
+  set('vv-bill-no',v.billNo);
+  set('vv-phone',v.custPhone);
+  set('vv-mode-purchase',v.modePurchase);
+  set('vv-addr',v.custAddr);
+  set('vv-old-model',v.oldModel);
+  set('vv-old-year',v.oldYear);
+  set('vv-old-bikeno',v.oldBikeNo);
+  set('vv-km-run',v.kmRun);
+  set('vv-condition',v.condition);
+  set('vv-expected',v.expectedVal);
+  set('vv-in-words',v.inWords);
+  const sanakLabel={done:'✅ Done',pending:'⏳ Pending'}[v.sanakhat]||'—';
+  const taxLabel={clear:'✅ Clear',done:'✅ Done',remaining:'⚠️ Remaining',pending:'⏳ Pending'}[v.bikeTax]||'—';
+  set('vv-sanakhat',sanakLabel);
+  set('vv-bike-tax',taxLabel);
+  set('vv-exchange-by',v.exchangeBy);
+  set('vv-exchange-with',v.exchangeWith);
+  openModal('valuation-view');
+}
+
+function editValuationFromView(){
+  if(_valViewIndex===null)return;
+  closeModal('valuation-view');
+  loadValuationToForm(_valViewIndex);
 }
 
 function loadValuationToForm(i){
