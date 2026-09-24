@@ -650,6 +650,26 @@ select.field-input { cursor: pointer; }
   .pricelist-table-card { box-shadow: none; border: 1px solid #999; }
   .pl-input { border: none !important; color: #000 !important; font-weight: 600; }
   #delivery-doc, #quotation-doc, #test-ride-doc { box-shadow: none; border: none; padding: 18px 26px; }
+  /* delivery sheet — sized to use the full A4 page (not shrunk into a mostly-blank page,
+     but still fits on one page after the Discount / Insurance & Namsari additions) */
+  #delivery-doc { padding: 12px 22px !important; box-sizing: border-box !important; display: flex !important; flex-direction: column !important; justify-content: space-between !important; min-height: 273mm !important; }
+  #delivery-doc .doc-footer { margin-top: 18px !important; padding-top: 4px !important; font-size: 8px !important; }
+  #delivery-doc .doc-header { padding-bottom: 7px !important; margin-bottom: 7px !important; }
+  #delivery-doc .company-name { font-size: 20px !important; }
+  #delivery-doc .company-sub { font-size: 10px !important; }
+  #delivery-doc .doc-title { font-size: 15px !important; margin: 4px 0 8px !important; padding-bottom: 4px !important; }
+  #delivery-doc .doc-section { margin-bottom: 7px !important; page-break-inside: avoid; break-inside: avoid; }
+  #delivery-doc .doc-section-title { font-size: 11px !important; padding: 2px 9px !important; margin-bottom: 4px !important; }
+  #delivery-doc .field-grid { gap: 3px 12px !important; }
+  #delivery-doc .field-label { font-size: 11.5px !important; min-width: 112px !important; }
+  #delivery-doc .field-print-val { font-size: 12px !important; padding: 1px 3px !important; line-height: 1.2 !important; }
+  #delivery-doc .mode-row { gap: 14px !important; font-size: 11.5px !important; row-gap: 4px !important; }
+  #delivery-doc .mode-item input[type="checkbox"] { width: 12px !important; height: 12px !important; }
+  #delivery-doc .terms-list li { font-size: 9px !important; margin-bottom: 1px !important; line-height: 1.3 !important; }
+  #delivery-doc .ack-box { padding: 5px 9px !important; font-size: 10.5px !important; line-height: 1.4 !important; margin-bottom: 6px !important; }
+  #delivery-doc .sig-row { margin-top: 16px !important; gap: 20px !important; page-break-inside: avoid; break-inside: avoid; }
+  #delivery-doc .sig-line { height: 34px !important; margin-bottom: 5px !important; }
+  #delivery-doc .sig-label { font-size: 10px !important; }
   input, select { border-bottom: 1px solid #999 !important; background: transparent !important; }
   #delivery-doc input, #delivery-doc select,
   #quotation-doc input, #quotation-doc select,
@@ -1301,10 +1321,27 @@ try{
               </div>
               <div class="field-row"><span class="field-label">Registration No.:</span><input class="field-input" id="d-reg-no" placeholder="e.g. LU PRA 01-015 PA 5331"></div>
               <div class="field-row"><span class="field-label">Model Year:</span><input class="field-input" id="d-model-year" placeholder="e.g. 2025"></div>
+              <div class="field-row"><span class="field-label">Discount Rs.:</span><input class="field-input" id="d-discount" type="number" placeholder="0" oninput="calcDeliverySellingPrice()"></div>
               <div class="field-row" style="grid-column:1/-1">
                 <span class="field-label">Marked Price Rs.:</span>
-                <input class="field-input" id="d-marked-price" placeholder="Auto-filled from model" style="font-weight:700;color:#0a1e42">
+                <input class="field-input" id="d-marked-price" placeholder="Auto-filled from model" style="font-weight:700;color:#0a1e42" oninput="calcDeliverySellingPrice()">
               </div>
+              <div class="field-row" style="grid-column:1/-1">
+                <span class="field-label">Selling Price Rs.:</span>
+                <input class="field-input" id="d-selling-price" placeholder="Auto = Marked Price − Discount" readonly style="font-weight:700;color:#C0392B">
+              </div>
+            </div>
+          </div>
+
+          <!-- INSURANCE & NAMSARI -->
+          <div class="doc-section" id="insurance-namsari-section">
+            <div class="doc-section-title">Insurance Type &amp; Namsari</div>
+            <div class="mode-row">
+              <div class="mode-item"><input type="checkbox" id="d-ins-full"><label for="d-ins-full" style="font-weight:600">Full Insurance</label></div>
+              <div class="mode-item"><input type="checkbox" id="d-ins-3rd"><label for="d-ins-3rd" style="font-weight:600">3rd Party</label></div>
+              <div class="mode-item"><input type="checkbox" id="d-ins-self"><label for="d-ins-self" style="font-weight:600">Self Insurance</label></div>
+              <div class="mode-item"><input type="checkbox" id="d-namsari"><label for="d-namsari" style="font-weight:600">Namsari (नामसारी)</label></div>
+              <div class="mode-item" style="flex:1;min-width:180px"><span class="field-label narrow" style="min-width:auto">Insurance Co.:</span><input class="field-input" id="d-insurance-name" placeholder="e.g. Shikhar Insurance, NIC Asia..."></div>
             </div>
           </div>
 
@@ -2661,6 +2698,7 @@ try{
           </div>
         </div>
         <div class="modal-foot">
+          <button class="btn btn-red" onclick="if(_valViewIndex!==null)printValuationSheetFromLedger(_valViewIndex)">🖨️ Print</button>
           <button class="btn btn-blue" onclick="editValuationFromView()">✏ Edit</button>
           <button class="btn btn-secondary" onclick="closeModal('valuation-view')">Close</button>
         </div>
@@ -5565,12 +5603,24 @@ function onDeliveryModelChange(doLookup=true,isBlur=false){
   const priceEl=document.getElementById('d-marked-price');
   if(model&&PRICE_MAP[model])priceEl.value='Rs. '+fmt(PRICE_MAP[model]);
   else priceEl.value='';
+  calcDeliverySellingPrice();
   if(doLookup){
     // Try to find an available bike in stock with this model
     const available=stock.filter(s=>s.model===model&&s.status!=='out');
     if(available.length===1){setDeliveryFromBike(available[0]);}
     else if(available.length===0){showStockMatchInfo(null);}
   }
+}
+
+// Auto: Selling Price = Marked Price − Discount
+function calcDeliverySellingPrice(){
+  const sellEl=document.getElementById('d-selling-price');
+  if(!sellEl)return;
+  const priceStr=(document.getElementById('d-marked-price').value||'').replace(/[^0-9]/g,'');
+  if(!priceStr){sellEl.value='';return;}
+  const price=parseInt(priceStr)||0;
+  const disc=parseInt((document.getElementById('d-discount').value||'').replace(/[^0-9]/g,''))||0;
+  sellEl.value='Rs. '+fmt(Math.max(price-disc,0));
 }
 
 // ══════════════════════════════════════════════
@@ -5620,6 +5670,18 @@ async function confirmDeliverAndMarkSold(){
   if(document.getElementById('d-mode-finance').checked)modes.push('Finance');
   const pay=modes.join(' + ')||'Cash';
 
+  // Discount, selling price, insurance type/name & namsari (from Delivery Sheet ticks)
+  const discount=parseInt(document.getElementById('d-discount').value)||0;
+  const sellingPriceStr=document.getElementById('d-selling-price').value.replace(/[^0-9]/g,'');
+  const sellingPrice=parseInt(sellingPriceStr)||Math.max(amt-discount,0);
+  const insTypes=[];
+  if(document.getElementById('d-ins-full').checked)insTypes.push('Full Insurance');
+  if(document.getElementById('d-ins-3rd').checked)insTypes.push('3rd Party');
+  if(document.getElementById('d-ins-self').checked)insTypes.push('Self Insurance');
+  const deliveryInsuranceType=insTypes.join(' + ');
+  const deliveryInsuranceName=document.getElementById('d-insurance-name').value.trim();
+  const deliveryNamsari=document.getElementById('d-namsari').checked;
+
   // Mark stock sold
   if(item){
     item.status='out';
@@ -5628,7 +5690,7 @@ async function confirmDeliverAndMarkSold(){
   }
 
   // Record sale
-  const saleObj={cust:custName,phone:document.getElementById('d-cust-phone').value.trim(),addr:document.getElementById('d-cust-addr').value.trim(),model,bikeno,colour,colorHex:item?item.colorHex:'#9e9e9e',engineno:item?item.engineno:engineno,chassisno:item?item.chassisno:chassisno,amt,pay,date,notes:'Delivered via Delivery Sheet',stockId:item?item.id:null};
+  const saleObj={cust:custName,phone:document.getElementById('d-cust-phone').value.trim(),addr:document.getElementById('d-cust-addr').value.trim(),model,bikeno,colour,colorHex:item?item.colorHex:'#9e9e9e',engineno:item?item.engineno:engineno,chassisno:item?item.chassisno:chassisno,amt,pay,date,notes:'Delivered via Delivery Sheet',stockId:item?item.id:null,discount,sellingPrice,insuranceType:deliveryInsuranceType,insuranceName:deliveryInsuranceName,namsari:deliveryNamsari?'Yes':''};
   sales.push(saleObj);
   await dbSet('dah2-sales',sales);
 
@@ -5795,10 +5857,10 @@ function syncAckName(){
 
 function clearDeliveryForm(silent=false){
   if(!silent&&!confirm('Delivery form clear garne?'))return;
-  ['d-cust-name','d-cust-phone','d-cust-addr','d-bike-color','d-engine-no','d-chassis-no','d-reg-no','d-model-year','d-marked-price','d-ack-name'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  ['d-cust-name','d-cust-phone','d-cust-addr','d-bike-color','d-engine-no','d-chassis-no','d-reg-no','d-model-year','d-discount','d-marked-price','d-selling-price','d-insurance-name','d-ack-name'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   ['d-cust-district','d-cust-muni'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   document.getElementById('d-bike-model').value='';
-  document.querySelectorAll('#d-mode-cash,#d-mode-exchange,#d-mode-finance').forEach(el=>el.checked=false);
+  document.querySelectorAll('#d-mode-cash,#d-mode-exchange,#d-mode-finance,#d-ins-full,#d-ins-3rd,#d-ins-self,#d-namsari').forEach(el=>el.checked=false);
   ['d-transfer-by','d-transfer-received-by','d-transfer-remarks'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   const transferToEl=document.getElementById('d-transfer-to');if(transferToEl)transferToEl.value='';
   updateTransferToDisplay();
@@ -7005,6 +7067,9 @@ function renderValuationLedger(){
         <button class="icon-btn icon-btn-edit" title="Load to form / Edit" onclick="loadValuationToForm(${v.origIdx})">
           <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
         </button>
+        <button class="icon-btn icon-btn-edit" title="Print this sheet" onclick="printValuationSheetFromLedger(${v.origIdx})">
+          <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+        </button>
         <button class="icon-btn icon-btn-del" title="Delete" onclick="deleteValuationSheet(${v.origIdx})">
           <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
         </button>
@@ -8180,6 +8245,27 @@ function printValuationTwoCopies(){
   };
   const logoPrev=document.getElementById('val-logo-preview');
   const logoSrc=(logoPrev&&logoPrev.style.display!=='none'&&logoPrev.src)?logoPrev.src:'';
+  printValuationDoc(v,logoSrc);
+}
+
+// ── VALUATION: PRINT A SINGLE SAVED LEDGER ENTRY (Individual Print) ──
+function printValuationSheetFromLedger(i){
+  const rec=valuationSheets[i];if(!rec)return;
+  const sanakMap={done:'✅ Done',pending:'⏳ Pending'};
+  const taxMap={clear:'✅ Clear',done:'✅ Done',remaining:'⚠️ Remaining',pending:'⏳ Pending'};
+  const v={
+    sheetNo:rec.sheetNo||'', billNo:rec.billNo||'', date:rec.date||'', company:rec.company||'Divya Auto Hub Pvt. Ltd.',
+    custName:rec.custName||'', custAddr:rec.custAddr||'', custPhone:rec.custPhone||'',
+    oldModel:rec.oldModel||'', oldYear:rec.oldYear||'', oldBikeNo:rec.oldBikeNo||'', kmRun:rec.kmRun||'', condition:rec.condition||'',
+    expectedVal:rec.expectedVal||'', oldBikeVal:rec.oldBikeVal||'', inWords:rec.inWords||'', exchangeBy:rec.exchangeBy||'',
+    sanakhat:sanakMap[rec.sanakhat]||'—', bikeTax:taxMap[rec.bikeTax]||'—', modePurchase:rec.modePurchase||'—', exchangeWith:rec.exchangeWith||''
+  };
+  const logoPrev=document.getElementById('val-logo-preview');
+  const logoSrc=(logoPrev&&logoPrev.style.display!=='none'&&logoPrev.src)?logoPrev.src:'';
+  printValuationDoc(v,logoSrc);
+}
+
+function printValuationDoc(v,logoSrc){
   const esc=s=>String(s||'—');
   const win=window.open('','_blank','width=850,height=1000');
   if(!win){toast('⚠️ Pop-up blocked — browser ma allow garnus');return;}
