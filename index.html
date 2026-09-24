@@ -1321,14 +1321,21 @@ try{
               </div>
               <div class="field-row"><span class="field-label">Registration No.:</span><input class="field-input" id="d-reg-no" placeholder="e.g. LU PRA 01-015 PA 5331"></div>
               <div class="field-row"><span class="field-label">Model Year:</span><input class="field-input" id="d-model-year" placeholder="e.g. 2025"></div>
-              <div class="field-row"><span class="field-label">Discount Rs.:</span><input class="field-input" id="d-discount" type="number" placeholder="0" oninput="calcDeliverySellingPrice()"></div>
               <div class="field-row" style="grid-column:1/-1">
-                <span class="field-label">Marked Price Rs.:</span>
+                <span class="field-label">MRP (Marked Price) Rs.:</span>
                 <input class="field-input" id="d-marked-price" placeholder="Auto-filled from model" style="font-weight:700;color:#0a1e42" oninput="calcDeliverySellingPrice()">
               </div>
               <div class="field-row" style="grid-column:1/-1">
+                <span class="field-label">Discount Rs.:</span>
+                <input class="field-input" id="d-discount" type="number" placeholder="0" oninput="calcDeliverySellingPrice()">
+              </div>
+              <div class="field-row" style="grid-column:1/-1">
                 <span class="field-label">Selling Price Rs.:</span>
-                <input class="field-input" id="d-selling-price" placeholder="Auto = Marked Price − Discount" readonly style="font-weight:700;color:#C0392B">
+                <input class="field-input" id="d-selling-price" placeholder="Auto = MRP − Discount" readonly style="font-weight:700;color:#C0392B">
+              </div>
+              <div class="field-row" style="grid-column:1/-1">
+                <span class="field-label">Selling Price in Words:</span>
+                <input class="field-input" id="d-selling-price-words" placeholder="Auto-filled from Selling Price" readonly style="font-style:italic;font-weight:700">
               </div>
             </div>
           </div>
@@ -1382,6 +1389,8 @@ try{
             <div class="sig-block"><div class="sig-line"></div><div class="sig-label" id="sig-label-2">Sales Representative Signature</div></div>
             <div class="sig-block"><div class="sig-line"></div><div class="sig-label">Authorized Stamp</div></div>
           </div>
+
+          <div class="computer-generated-note" style="text-align:center;font-size:10.5px;font-weight:700;font-style:italic;color:#000;margin-top:8px">This is a computer generated delivery sheet and does not require signature and stamp.</div>
 
           <div class="doc-footer">Divya Auto Hub Pvt. Ltd. | Maharajgunj-03, Kathmandu, Nepal | 01-4533133 / 9851061611 / 9801204448 | divyautohub@gmail.com</div>
         </div>
@@ -5615,12 +5624,19 @@ function onDeliveryModelChange(doLookup=true,isBlur=false){
 // Auto: Selling Price = Marked Price − Discount
 function calcDeliverySellingPrice(){
   const sellEl=document.getElementById('d-selling-price');
+  const wordsEl=document.getElementById('d-selling-price-words');
   if(!sellEl)return;
   const priceStr=(document.getElementById('d-marked-price').value||'').replace(/[^0-9]/g,'');
-  if(!priceStr){sellEl.value='';return;}
+  if(!priceStr){sellEl.value='';if(wordsEl)wordsEl.value='';return;}
   const price=parseInt(priceStr)||0;
   const disc=parseInt((document.getElementById('d-discount').value||'').replace(/[^0-9]/g,''))||0;
-  sellEl.value='Rs. '+fmt(Math.max(price-disc,0));
+  const sell=Math.max(price-disc,0);
+  sellEl.value='Rs. '+fmt(sell);
+  // Amount in words (auto)
+  if(wordsEl){
+    const w=numToWordsIndian(sell);
+    wordsEl.value=w?('Rupees '+w+' Only'):'';
+  }
 }
 
 // ══════════════════════════════════════════════
@@ -5857,7 +5873,7 @@ function syncAckName(){
 
 function clearDeliveryForm(silent=false){
   if(!silent&&!confirm('Delivery form clear garne?'))return;
-  ['d-cust-name','d-cust-phone','d-cust-addr','d-bike-color','d-engine-no','d-chassis-no','d-reg-no','d-model-year','d-discount','d-marked-price','d-selling-price','d-insurance-name','d-ack-name'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  ['d-cust-name','d-cust-phone','d-cust-addr','d-bike-color','d-engine-no','d-chassis-no','d-reg-no','d-model-year','d-discount','d-marked-price','d-selling-price','d-selling-price-words','d-insurance-name','d-ack-name'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   ['d-cust-district','d-cust-muni'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   document.getElementById('d-bike-model').value='';
   document.querySelectorAll('#d-mode-cash,#d-mode-exchange,#d-mode-finance,#d-ins-full,#d-ins-3rd,#d-ins-self,#d-namsari').forEach(el=>el.checked=false);
