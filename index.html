@@ -954,6 +954,10 @@ try{
       <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
       Dashboard
     </div>
+    <div class="nav-item" onclick="showPage('daily-report',this)" data-page="daily-report">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg>
+      Daily Report
+    </div>
     <div class="nav-label" style="margin-top:16px">Tools</div>
     <div class="nav-item" onclick="showPage('calendar',this)" data-page="calendar">
       <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
@@ -2741,6 +2745,134 @@ try{
     </div>
 
     <!-- ══ NEPALI CALENDAR PAGE ══ -->
+    <div class="page-section" id="page-daily-report">
+      <style>
+        #page-daily-report{ --dr-bg:var(--gray-50); --dr-card:#ffffff; --dr-text:var(--gray-800); --dr-muted:var(--gray-500); --dr-border:var(--gray-200); --dr-accent:var(--green); --dr-accent2:var(--accent); --dr-warn:#b23b2e; --dr-input-bg:#fafbfc; }
+        #page-daily-report .dr-wrap{max-width:880px;margin:0 auto;}
+        #page-daily-report .dr-sub{color:var(--dr-muted);font-size:13px;margin-bottom:18px;}
+        #page-daily-report .dr-card{background:var(--dr-card);border:1px solid var(--dr-border);border-radius:var(--radius-lg);padding:16px;margin-bottom:16px;box-shadow:var(--shadow);}
+        #page-daily-report .dr-card h2{font-size:15px;margin:0 0 12px;color:var(--dr-accent2);}
+        #page-daily-report .dr-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;}
+        #page-daily-report label{display:block;font-size:12px;color:var(--dr-muted);margin-bottom:3px;}
+        #page-daily-report input,#page-daily-report select{width:100%;padding:8px 9px;border:1px solid var(--dr-border);border-radius:8px;background:var(--dr-input-bg);color:var(--dr-text);font-size:14px;}
+        #page-daily-report input:read-only{opacity:.85;font-weight:600;}
+        #page-daily-report .dr-row-total{display:flex;justify-content:space-between;margin-top:10px;padding-top:10px;border-top:1px dashed var(--dr-border);font-size:13px;}
+        #page-daily-report .dr-row-total b{color:var(--dr-accent2);}
+        #page-daily-report table{width:100%;border-collapse:collapse;font-size:13px;}
+        #page-daily-report th,#page-daily-report td{padding:6px 4px;border-bottom:1px solid var(--dr-border);text-align:left;}
+        #page-daily-report th{color:var(--dr-muted);font-weight:500;font-size:11px;text-transform:uppercase;}
+        #page-daily-report td input{padding:5px 6px;font-size:13px;}
+        #page-daily-report .dr-model-name{white-space:nowrap;}
+        #page-daily-report .dr-tblwrap{overflow-x:auto;}
+        #page-daily-report .dr-match-ok{color:var(--dr-accent);font-size:12px;}
+        #page-daily-report .dr-match-bad{color:var(--dr-warn);font-size:12px;font-weight:600;}
+        #page-daily-report .dr-actions{display:flex;gap:10px;flex-wrap:wrap;margin:16px 0;}
+        #page-daily-report .dr-actions button{cursor:pointer;border:none;border-radius:8px;padding:10px 16px;font-size:14px;font-weight:600;}
+        #page-daily-report .dr-btn-primary{background:var(--dr-accent);color:#fff;}
+        #page-daily-report .dr-btn-secondary{background:var(--dr-accent2);color:#fff;}
+        #page-daily-report .dr-btn-ghost{background:transparent;border:1px solid var(--dr-border);color:var(--dr-text);}
+        #page-daily-report pre#dr_reportOut{white-space:pre-wrap;font-family:ui-monospace,Consolas,monospace;font-size:13px;background:var(--dr-input-bg);border:1px solid var(--dr-border);border-radius:10px;padding:14px;line-height:1.5;}
+        #page-daily-report .dr-hist-item{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--dr-border);font-size:13px;gap:10px;}
+        #page-daily-report .dr-hist-item span.dr-d{color:var(--dr-muted);font-size:11px;}
+        #page-daily-report .dr-smallbtn{padding:5px 10px;font-size:12px;}
+        #page-daily-report .dr-copied{color:var(--dr-accent);font-size:12px;margin-left:8px;}
+        #page-daily-report .dr-step{display:none;}
+        #page-daily-report .dr-step.active{display:block;}
+        #page-daily-report .dr-progress{display:flex;gap:6px;margin-bottom:16px;}
+        #page-daily-report .dr-progress span{flex:1;height:4px;border-radius:2px;background:var(--dr-border);}
+        #page-daily-report .dr-progress span.dr-done{background:var(--dr-accent);}
+        #page-daily-report .dr-stepnav{display:flex;justify-content:space-between;margin-top:14px;}
+      </style>
+      <div class="dr-wrap">
+        <div class="dr-sub">Step-by-step bhara garnu — "Next" thichera agadi badhnu, ani antim ma report ready huncha.</div>
+
+        <div class="dr-progress" id="dr_progressBar"></div>
+
+        <div class="dr-card dr-step active" data-step="0">
+          <h2>Step 1 of 5 — Basic Info</h2>
+          <div class="dr-grid">
+            <div><label>Date</label><input id="dr_f_date" type="date"></div>
+            <div><label>Dealer Name</label><input id="dr_f_dealer" value="Divya Auto Hub Pvt Ltd, Maharajgunj"></div>
+            <div><label>Payment (HFL + Bank)</label><input id="dr_f_payment"></div>
+            <div><label>Lifting</label><input id="dr_f_lifting"></div>
+          </div>
+          <div class="dr-stepnav"><span></span><button class="dr-btn-primary" onclick="drNextStep()">Next →</button></div>
+        </div>
+
+        <div class="dr-card dr-step" data-step="1">
+          <h2>Step 2 of 5 — Targets</h2>
+          <div class="dr-grid">
+            <div><label>Quarter Target</label><input id="dr_f_qtarget"></div>
+            <div><label>Monthly Target</label><input id="dr_f_mtarget"></div>
+            <div><label>Exchange Target</label><input id="dr_f_extarget"></div>
+            <div><label>Exchange Ach.</label><input id="dr_f_exach"></div>
+            <div><label>Min. Stock Target</label><input id="dr_f_minstock"></div>
+          </div>
+          <div class="dr-stepnav"><button class="dr-btn-ghost" onclick="drPrevStep()">← Back</button><button class="dr-btn-primary" onclick="drNextStep()">Next →</button></div>
+        </div>
+
+        <div class="dr-card dr-step" data-step="2">
+          <h2>Step 3 of 5 — Enquiry</h2>
+          <div class="dr-grid">
+            <div><label>Normal</label><input id="dr_e_normal" type="number" value="0"></div>
+            <div><label>Finance</label><input id="dr_e_finance" type="number" value="0"></div>
+            <div><label>Bajaj Connect</label><input id="dr_e_connect" type="number" value="0"></div>
+          </div>
+          <div class="dr-row-total">Total Enquiry <b id="dr_e_total">0</b></div>
+          <div class="dr-stepnav"><button class="dr-btn-ghost" onclick="drPrevStep()">← Back</button><button class="dr-btn-primary" onclick="drNextStep()">Next →</button></div>
+        </div>
+
+        <div class="dr-card dr-step" data-step="3">
+          <h2>Step 4 of 5 — Sales (by payment type)</h2>
+          <div class="dr-grid">
+            <div><label>Cash</label><input id="dr_s_cash" type="number" value="0"></div>
+            <div><label>Finance (Cash)</label><input id="dr_s_finance" type="number" value="0"></div>
+            <div><label>Self</label><input id="dr_s_self" type="number" value="0"></div>
+            <div><label>Ex + Cash</label><input id="dr_s_excash" type="number" value="0"></div>
+            <div><label>Ex + Finance</label><input id="dr_s_exfin" type="number" value="0"></div>
+            <div><label>Ex + Self Finance</label><input id="dr_s_exself" type="number" value="0"></div>
+          </div>
+          <div class="dr-row-total">Total Sales <b id="dr_s_total">0</b></div>
+          <div class="dr-stepnav"><button class="dr-btn-ghost" onclick="drPrevStep()">← Back</button><button class="dr-btn-primary" onclick="drNextStep()">Next →</button></div>
+        </div>
+
+        <div class="dr-card dr-step" data-step="4">
+          <h2>Step 5 of 5 — Model-wise Sold Today &amp; Stock</h2>
+          <div class="dr-sub" style="margin-bottom:8px;">Sold type garda Stock automatic ghatcha (opening stock bata). Naya stock aayo bhane, Stock field ma manually update garna sakincha.</div>
+          <div class="dr-tblwrap">
+          <table id="dr_modelTable">
+            <thead><tr><th class="dr-model-name">Model</th><th>Sold</th><th>Stock</th></tr></thead>
+            <tbody></tbody>
+          </table>
+          </div>
+          <div class="dr-row-total">Total Sold (models) <b id="dr_m_soldtotal">0</b><span id="dr_matchMsg"></span></div>
+          <div class="dr-row-total">Total Stock <b id="dr_m_stocktotal">0</b></div>
+          <div class="dr-stepnav"><button class="dr-btn-ghost" onclick="drPrevStep()">← Back</button><span></span></div>
+        </div>
+
+        <div class="dr-actions">
+          <button class="dr-btn-primary" onclick="drGenerateReport()">Generate Report</button>
+          <button class="dr-btn-secondary" onclick="drSaveEntry()">Save Today's Entry</button>
+          <button class="dr-btn-ghost" onclick="drLoadLatest()">Reload Last Saved</button>
+        </div>
+
+        <div class="dr-card" id="dr_outCard" style="display:none;">
+          <h2>Report Preview
+            <button class="dr-btn-ghost dr-smallbtn" onclick="drCopyReport()">Copy</button>
+            <button class="dr-btn-primary dr-smallbtn" onclick="drSendWhatsApp()" style="background:#25D366;">Send on WhatsApp</button>
+            <span id="dr_copiedMsg" class="dr-copied"></span>
+          </h2>
+          <pre id="dr_reportOut"></pre>
+        </div>
+
+        <div class="dr-card">
+          <h2>History / Ledger</h2>
+          <div class="dr-sub" style="margin-bottom:10px;">"Edit" thichera tyo din ko entry form ma khulcha — value haru change garera "Save Today's Entry" thichnu hunchha update garna. "Delete" le entry sadhai ko lagi hataucha.</div>
+          <div id="dr_histList" class="dr-sub">No entries saved yet.</div>
+        </div>
+      </div>
+    </div>
+
     <div class="page-section" id="page-calendar">
       <div class="np-cal-header">
         <div>
@@ -4706,7 +4838,7 @@ function showPage(name,el){
   document.getElementById('page-'+name).classList.add('active');
   el.classList.add('active');
   currentPage=name;
-  const titles={stock:'Bike Stock',sales:'Sales Record',bookings:'Customer Bookings',delivery:'Bike Delivery Sheet',quotation:'Bike Quotation',['price-list']:'Bajaj Price List',['test-ride']:'Test Ride Form',['gift-coupon']:'Accessories Gift Coupon',['exchange-doc']:'Exchange Bike Document',['file-converter']:'File Converter',['emi-calc']:'Hulas EMI Calculator',receipt:'Cash Receipt',['receipt-ledger']:'Receipt Ledger',voucher:'Payment Voucher',['voucher-ledger']:'Voucher Ledger',valuation:'Valuation Sheet',['valuation-ledger']:'Valuation Ledger',dashboard:'Dashboard',calendar:'Nepali Calendar'};
+  const titles={stock:'Bike Stock',sales:'Sales Record',bookings:'Customer Bookings',delivery:'Bike Delivery Sheet',quotation:'Bike Quotation',['price-list']:'Bajaj Price List',['test-ride']:'Test Ride Form',['gift-coupon']:'Accessories Gift Coupon',['exchange-doc']:'Exchange Bike Document',['file-converter']:'File Converter',['emi-calc']:'Hulas EMI Calculator',receipt:'Cash Receipt',['receipt-ledger']:'Receipt Ledger',voucher:'Payment Voucher',['voucher-ledger']:'Voucher Ledger',valuation:'Valuation Sheet',['valuation-ledger']:'Valuation Ledger',dashboard:'Dashboard',calendar:'Nepali Calendar',['daily-report']:'Daily Report'};
   document.getElementById('page-title').textContent=titles[name];
   // mobile page bar sync
   const mobTitle=document.getElementById('mob-page-title');
@@ -4715,7 +4847,7 @@ function showPage(name,el){
   if(mobTitle) mobTitle.textContent=titles[name];
   if(mobBar) mobBar.style.display=window.innerWidth<=768?'flex':'none';
   const btn=document.getElementById('add-btn');
-  if(name==='delivery'||name==='quotation'||name==='price-list'||name==='test-ride'||name==='gift-coupon'||name==='exchange-doc'||name==='file-converter'||name==='emi-calc'||name==='dashboard'||name==='receipt'||name==='receipt-ledger'||name==='voucher'||name==='voucher-ledger'||name==='valuation'||name==='valuation-ledger'||name==='calendar'){
+  if(name==='delivery'||name==='quotation'||name==='price-list'||name==='test-ride'||name==='gift-coupon'||name==='exchange-doc'||name==='file-converter'||name==='emi-calc'||name==='dashboard'||name==='receipt'||name==='receipt-ledger'||name==='voucher'||name==='voucher-ledger'||name==='valuation'||name==='valuation-ledger'||name==='calendar'||name==='daily-report'){
     btn.style.display='none';
     if(mobAddBtn) mobAddBtn.style.display='none';
   } else {
@@ -4728,6 +4860,7 @@ function showPage(name,el){
   if(name==='receipt-ledger')renderReceiptLedger();
   if(name==='voucher-ledger')renderVoucherLedger();
   if(name==='valuation-ledger')renderValuationLedger();
+  if(name==='daily-report'&&typeof drRenderHistory==='function')drRenderHistory();
 }
 
 function openAddModal(){
@@ -10937,6 +11070,335 @@ if(_origShowPageEmbed){
     };
   }
 })();
+</script>
+
+<script>
+// ===== Daily Report module (namespaced dr*, uses its own localStorage keys) =====
+const DR_MODELS = [
+"Platina 100 ES Fi","Discover Disc","Discover ST","Pul 125 Fi","Pul NS 125 FI","Pul N 125",
+"Pul 150 SD","Pulsar 150 BS6","Pul 150 TD","Pulsar 150 TD BS6","Pul N150","Pul 220 Fi ABS",
+"Pul NS160 DC ABS","Pul N160 UG2","Pulsar N160 UG1","Pul 200 NS DC FI New","Pulsar NS400",
+"Pul N 250","Avenger 160 Street","Avenger 220 Cruise","Dominar 250","Dominar 400"
+];
+
+let drOpeningStock = DR_MODELS.map(()=>0);
+try{
+  const savedStock = JSON.parse(localStorage.getItem('dah_model_stock')||'null');
+  if(Array.isArray(savedStock) && savedStock.length===DR_MODELS.length){
+    drOpeningStock = savedStock.map(v=>Number(v)||0);
+  }
+}catch(e){}
+
+(function drInit(){
+  const tbody = document.querySelector('#dr_modelTable tbody');
+  if(!tbody) return;
+  DR_MODELS.forEach((m,i)=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td class="dr-model-name">${m}</td>
+      <td><input type="number" min="0" value="0" class="dr-sold" data-i="${i}"></td>
+      <td><input type="number" min="0" value="${drOpeningStock[i]}" class="dr-stock" data-i="${i}"></td>`;
+    tbody.appendChild(tr);
+  });
+
+  // Sold qty auto-decreases that model's Stock from the opening (last-saved) stock.
+  // Editing Stock directly (e.g. new stock received) re-bases the opening value.
+  tbody.querySelectorAll('.dr-sold').forEach(el=>{
+    el.addEventListener('input', ()=>{
+      const i = Number(el.dataset.i);
+      const stockEl = tbody.querySelector(`.dr-stock[data-i="${i}"]`);
+      const sold = Number(el.value)||0;
+      stockEl.value = drOpeningStock[i] - sold;
+    });
+  });
+  tbody.querySelectorAll('.dr-stock').forEach(el=>{
+    el.addEventListener('input', ()=>{
+      const i = Number(el.dataset.i);
+      const soldEl = tbody.querySelector(`.dr-sold[data-i="${i}"]`);
+      const sold = Number(soldEl.value)||0;
+      drOpeningStock[i] = (Number(el.value)||0) + sold;
+    });
+  });
+
+  const dateEl = document.getElementById('dr_f_date');
+  if(dateEl) dateEl.valueAsDate = new Date();
+  document.querySelectorAll('#page-daily-report input').forEach(el=>el.setAttribute('enterkeyhint','next'));
+
+  const pageEl = document.getElementById('page-daily-report');
+  pageEl.addEventListener('input', drRecalc);
+  drRecalc();
+
+  const steps = Array.from(pageEl.querySelectorAll('.dr-step'));
+  window._drSteps = steps;
+  window._drCurStep = 0;
+  drRenderProgress();
+
+  pageEl.addEventListener('keydown', function(ev){
+    if(ev.key !== 'Enter') return;
+    const el = ev.target;
+    if(!(el.tagName === 'INPUT')) return;
+    ev.preventDefault();
+    const activeStep = steps[window._drCurStep];
+    const fields = Array.from(activeStep.querySelectorAll('input'));
+    const idx = fields.indexOf(el);
+    if(idx === -1) return;
+    if(idx < fields.length - 1){
+      fields[idx+1].focus();
+      fields[idx+1].select && fields[idx+1].select();
+    } else {
+      if(window._drCurStep < steps.length - 1){ drNextStep(); }
+      else { drGenerateReport(); }
+    }
+  });
+
+  drRenderHistory();
+})();
+
+function drSumIds(ids){ return ids.reduce((a,id)=>a+(Number(document.getElementById(id).value)||0),0); }
+function drSumClass(cls){ return Array.from(document.querySelectorAll('#page-daily-report .'+cls)).reduce((a,el)=>a+(Number(el.value)||0),0); }
+
+function drRecalc(){
+  const eTotal = drSumIds(['dr_e_normal','dr_e_finance','dr_e_connect']);
+  document.getElementById('dr_e_total').textContent = eTotal;
+  const sTotal = drSumIds(['dr_s_cash','dr_s_finance','dr_s_self','dr_s_excash','dr_s_exfin','dr_s_exself']);
+  document.getElementById('dr_s_total').textContent = sTotal;
+  const soldTotal = drSumClass('dr-sold');
+  const stockTotal = drSumClass('dr-stock');
+  document.getElementById('dr_m_soldtotal').textContent = soldTotal;
+  document.getElementById('dr_m_stocktotal').textContent = stockTotal;
+  const msg = document.getElementById('dr_matchMsg');
+  if(soldTotal===sTotal){ msg.textContent=' ✓ matches Total Sales'; msg.className='dr-match-ok'; }
+  else { msg.textContent=' ⚠ does not match Total Sales ('+sTotal+')'; msg.className='dr-match-bad'; }
+}
+
+function drShowStep(i){
+  const steps = window._drSteps;
+  steps.forEach(s=>s.classList.remove('active'));
+  window._drCurStep = Math.max(0, Math.min(steps.length-1, i));
+  steps[window._drCurStep].classList.add('active');
+  drRenderProgress();
+  steps[window._drCurStep].scrollIntoView({behavior:'smooth', block:'start'});
+}
+function drNextStep(){ drShowStep(window._drCurStep+1); }
+function drPrevStep(){ drShowStep(window._drCurStep-1); }
+function drRenderProgress(){
+  const bar = document.getElementById('dr_progressBar');
+  bar.innerHTML = window._drSteps.map((_,i)=>`<span class="${i<=window._drCurStep?'dr-done':''}"></span>`).join('');
+}
+
+function drBuildReportText(){
+  const v = id => document.getElementById(id).value || '';
+  const stockLines = DR_MODELS.map((m,i)=>{
+    const st = document.querySelectorAll('#page-daily-report .dr-stock')[i].value;
+    return `${m} – ${st}`;
+  }).join('\n');
+  const soldRows = DR_MODELS.map((m,i)=>({ m, qty: Number(document.querySelectorAll('#page-daily-report .dr-sold')[i].value)||0 }))
+    .filter(r=>r.qty>0);
+  const soldLines = soldRows.length
+    ? soldRows.map(r=>`${r.m} – ${r.qty}`).join('\n')
+    : 'No models sold today.';
+
+  return `Date: ${drFormatDate(v('dr_f_date'))}
+Dealer Name: ${v('dr_f_dealer')}
+
+Payment HFL + Bank: ${v('dr_f_payment')}
+Lifting: ${v('dr_f_lifting')}
+
+Quarter Target: ${v('dr_f_qtarget')}
+Monthly Target: ${v('dr_f_mtarget')}
+Total Retail: ${document.getElementById('dr_s_total').textContent}
+Exchange Target: ${v('dr_f_extarget')}
+Exchange Ach.: ${v('dr_f_exach')}
+
+Total Enquiry: ${document.getElementById('dr_e_total').textContent}
+Normal: ${v('dr_e_normal')}
+Finance: ${v('dr_e_finance')}
+Bajaj Connect: ${v('dr_e_connect')}
+
+Sales: ${document.getElementById('dr_s_total').textContent}
+Cash: ${v('dr_s_cash')}
+Finance: ${v('dr_s_finance')}
+Self: ${v('dr_s_self')}
+Ex + Cash: ${v('dr_s_excash')}
+Ex + Finance: ${v('dr_s_exfin')}
+Ex + Self Finance: ${v('dr_s_exself')}
+
+Sold Models Today (Qty ${document.getElementById('dr_m_soldtotal').textContent}):
+${soldLines}
+
+Total Stock: ${document.getElementById('dr_m_stocktotal').textContent}
+Min. Stock Target: ${v('dr_f_minstock')}
+
+${stockLines}`;
+}
+
+function drFormatDate(d){
+  if(!d) return '';
+  const dt = new Date(d+'T00:00:00');
+  const day = dt.getDate();
+  const suf = (day%10===1&&day!==11)?'st':(day%10===2&&day!==12)?'nd':(day%10===3&&day!==13)?'rd':'th';
+  return `${day}${suf} ${dt.toLocaleString('en-US',{month:'long'})}, ${dt.getFullYear()}`;
+}
+
+function drGenerateReport(){
+  document.getElementById('dr_reportOut').textContent = drBuildReportText();
+  drSaveEntry(true); // auto-save + refresh ledger
+  document.getElementById('dr_outCard').style.display = 'block';
+  document.getElementById('dr_outCard').scrollIntoView({behavior:'smooth'});
+}
+
+function drCopyReport(){
+  const text = document.getElementById('dr_reportOut').textContent;
+  navigator.clipboard.writeText(text).then(()=>{
+    const m = document.getElementById('dr_copiedMsg');
+    m.textContent = 'Copied!';
+    setTimeout(()=>m.textContent='',1500);
+  }).catch(()=>{});
+}
+
+function drSendWhatsApp(){
+  const text = document.getElementById('dr_reportOut').textContent || drBuildReportText();
+  const url = 'https://wa.me/?text=' + encodeURIComponent(text);
+  window.open(url, '_blank');
+}
+
+function drCollectState(){
+  const state = {};
+  document.querySelectorAll('#page-daily-report input').forEach(el=>{ if(el.id) state[el.id]=el.value; });
+  state.sold = Array.from(document.querySelectorAll('#page-daily-report .dr-sold')).map(el=>el.value);
+  state.stock = Array.from(document.querySelectorAll('#page-daily-report .dr-stock')).map(el=>el.value);
+  return state;
+}
+
+function drApplyState(state){
+  Object.keys(state).forEach(k=>{
+    if(k==='sold') state.sold.forEach((val,i)=>{ const el=document.querySelectorAll('#page-daily-report .dr-sold')[i]; if(el) el.value=val; });
+    else if(k==='stock') state.stock.forEach((val,i)=>{ const el=document.querySelectorAll('#page-daily-report .dr-stock')[i]; if(el) el.value=val; });
+    else { const el=document.getElementById(k); if(el) el.value=state[k]; }
+  });
+  // re-derive opening stock so further Sold edits keep decrementing correctly
+  DR_MODELS.forEach((m,i)=>{
+    const stockEl = document.querySelector(`#page-daily-report .dr-stock[data-i="${i}"]`);
+    const soldEl = document.querySelector(`#page-daily-report .dr-sold[data-i="${i}"]`);
+    if(stockEl && soldEl) drOpeningStock[i] = (Number(stockEl.value)||0) + (Number(soldEl.value)||0);
+  });
+  drRecalc();
+}
+
+async function drSaveEntry(silent){
+  try{
+    const date = document.getElementById('dr_f_date').value || new Date().toISOString().slice(0,10);
+    const state = drCollectState();
+    state.report = drBuildReportText();
+    state.enquiryTotal = document.getElementById('dr_e_total').textContent;
+    state.salesTotal = document.getElementById('dr_s_total').textContent;
+    state.stockTotal = document.getElementById('dr_m_stocktotal').textContent;
+    localStorage.setItem('dah_report_'+date, JSON.stringify(state));
+    // maintain index
+    let idx = JSON.parse(localStorage.getItem('dah_report_index')||'[]');
+    if(!idx.includes(date)){ idx.push(date); idx.sort().reverse(); localStorage.setItem('dah_report_index', JSON.stringify(idx)); }
+    // today's ending stock becomes tomorrow's opening stock
+    const endingStock = Array.from(document.querySelectorAll('#page-daily-report .dr-stock')).map(el=>Number(el.value)||0);
+    drOpeningStock = endingStock.slice();
+    localStorage.setItem('dah_model_stock', JSON.stringify(endingStock));
+    drRenderHistory();
+    if(!silent) alert('Saved for '+date);
+  }catch(e){ if(!silent) alert('Could not save (storage unavailable).'); }
+}
+
+function drLoadLatest(){
+  try{
+    const idx = JSON.parse(localStorage.getItem('dah_report_index')||'[]');
+    if(!idx.length){ alert('No saved entries yet.'); return; }
+    drLoadEntry(idx[0]);
+  }catch(e){}
+}
+
+function drLoadEntry(date){
+  try{
+    const raw = localStorage.getItem('dah_report_'+date);
+    if(!raw) return;
+    const state = JSON.parse(raw);
+    drApplyState(state);
+    document.getElementById('dr_reportOut').textContent = state.report;
+    document.getElementById('dr_outCard').style.display='block';
+    drShowStep(0);
+    document.querySelector('#page-daily-report .dr-wrap').scrollIntoView({behavior:'smooth', block:'start'});
+  }catch(e){}
+}
+
+function drDeleteEntry(date){
+  try{
+    if(!confirm('Delete entry for '+drFormatDate(date)+'? Yo undo huna sakdaina.')) return;
+    localStorage.removeItem('dah_report_'+date);
+    let idx = JSON.parse(localStorage.getItem('dah_report_index')||'[]');
+    idx = idx.filter(d=>d!==date);
+    localStorage.setItem('dah_report_index', JSON.stringify(idx));
+    drRenderHistory();
+  }catch(e){}
+}
+
+function drRenderHistory(){
+  try{
+    const idx = JSON.parse(localStorage.getItem('dah_report_index')||'[]');
+    const box = document.getElementById('dr_histList');
+    if(!box) return;
+    if(!idx.length){ box.innerHTML='No entries saved yet.'; return; }
+    box.innerHTML='';
+
+    // All-time totals across every saved entry
+    let aDays=0, aEnq=0, aSales=0;
+    idx.forEach(date=>{
+      const raw = localStorage.getItem('dah_report_'+date); if(!raw) return;
+      const s = JSON.parse(raw);
+      aDays++;
+      aEnq += Number(s.enquiryTotal)||0;
+      aSales += Number(s.salesTotal)||0;
+    });
+    const allTime = document.createElement('div');
+    allTime.className='dr-hist-item';
+    allTime.innerHTML = `<div><b>All-Time Total</b> <span class="dr-d">Days: ${aDays} · Total Sales: ${aSales} · Total Enquiry: ${aEnq}</span></div>`;
+    box.appendChild(allTime);
+
+    const month = idx[0].slice(0,7);
+    let mDays=0, mEnq=0, mSales=0, mEnqNormal=0, mEnqFinance=0, mEnqConnect=0,
+        mFinCash=0, mFinExch=0;
+    idx.forEach(date=>{
+      if(date.slice(0,7)!==month) return;
+      const raw = localStorage.getItem('dah_report_'+date); if(!raw) return;
+      const s = JSON.parse(raw);
+      const n = k => Number(s[k])||0;
+      mDays++;
+      mEnq += Number(s.enquiryTotal)||0;
+      mSales += Number(s.salesTotal)||0;
+      mEnqNormal += n('dr_e_normal');
+      mEnqFinance += n('dr_e_finance');
+      mEnqConnect += n('dr_e_connect');
+      mFinCash += n('dr_s_finance');
+      mFinExch += n('dr_s_exfin');
+    });
+    const mFinTotal = mFinCash + mFinExch;
+    const sum = document.createElement('div');
+    sum.className='dr-hist-item';
+    sum.innerHTML = `<div><b>Month Summary (${month})</b> <span class="dr-d">Days: ${mDays} · Total Sales: ${mSales}<br>
+      Total Enquiry: ${mEnq} · Normal Enquiry: ${mEnqNormal} · Finance Enquiry: ${mEnqFinance} · Bajaj Connect: ${mEnqConnect}<br>
+      Finance Cash: ${mFinCash} · Finance Exchange: ${mFinExch} · Total Finance: ${mFinTotal}</span></div>`;
+    box.appendChild(sum);
+    idx.forEach(date=>{
+      const raw = localStorage.getItem('dah_report_'+date);
+      if(!raw) return;
+      const s = JSON.parse(raw);
+      const n = k => s[k]||0;
+      const div = document.createElement('div');
+      div.className='dr-hist-item';
+      div.innerHTML = `<div><b>${drFormatDate(date)}</b> <span class="dr-d">Enquiry: ${s.enquiryTotal||0} (Normal ${n('dr_e_normal')} · Finance ${n('dr_e_finance')} · Connect ${n('dr_e_connect')}) · Sales: ${s.salesTotal||0} · Stock: ${s.stockTotal||0}<br>Cash ${n('dr_s_cash')} · Finance Cash ${n('dr_s_finance')} · Self ${n('dr_s_self')} · Ex+Cash ${n('dr_s_excash')} · Finance Exchange ${n('dr_s_exfin')} · Ex+Self ${n('dr_s_exself')}</span></div>
+        <span style="display:flex;gap:6px;flex-shrink:0;">
+          <button class="dr-btn-ghost dr-smallbtn" onclick="drLoadEntry('${date}')">Edit</button>
+          <button class="dr-btn-ghost dr-smallbtn" style="color:#C0392B" onclick="drDeleteEntry('${date}')">Delete</button>
+        </span>`;
+      box.appendChild(div);
+    });
+  }catch(e){}
+}
 </script>
 
 </body>
