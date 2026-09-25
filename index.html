@@ -2776,31 +2776,22 @@ try{
         #page-daily-report .dr-hist-item span.dr-d{color:var(--dr-muted);font-size:11px;}
         #page-daily-report .dr-smallbtn{padding:5px 10px;font-size:12px;}
         #page-daily-report .dr-copied{color:var(--dr-accent);font-size:12px;margin-left:8px;}
-        #page-daily-report .dr-step{display:none;}
-        #page-daily-report .dr-step.active{display:block;}
-        #page-daily-report .dr-progress{display:flex;gap:6px;margin-bottom:16px;}
-        #page-daily-report .dr-progress span{flex:1;height:4px;border-radius:2px;background:var(--dr-border);}
-        #page-daily-report .dr-progress span.dr-done{background:var(--dr-accent);}
-        #page-daily-report .dr-stepnav{display:flex;justify-content:space-between;margin-top:14px;}
       </style>
       <div class="dr-wrap">
-        <div class="dr-sub">Step-by-step bhara garnu — "Next" thichera agadi badhnu, ani antim ma report ready huncha.</div>
+        <div class="dr-sub">Sabai fields euta page ma bharnus, ani tala "Generate Report" thichnus.</div>
 
-        <div class="dr-progress" id="dr_progressBar"></div>
-
-        <div class="dr-card dr-step active" data-step="0">
-          <h2>Step 1 of 5 — Basic Info</h2>
+        <div class="dr-card">
+          <h2>Basic Info</h2>
           <div class="dr-grid">
             <div><label>Date</label><input id="dr_f_date" type="date"></div>
             <div><label>Dealer Name</label><input id="dr_f_dealer" value="Divya Auto Hub Pvt Ltd, Maharajgunj"></div>
             <div><label>Payment (HFL + Bank)</label><input id="dr_f_payment"></div>
             <div><label>Lifting</label><input id="dr_f_lifting"></div>
           </div>
-          <div class="dr-stepnav"><span></span><button class="dr-btn-primary" onclick="drNextStep()">Next →</button></div>
         </div>
 
-        <div class="dr-card dr-step" data-step="1">
-          <h2>Step 2 of 5 — Targets</h2>
+        <div class="dr-card">
+          <h2>Targets</h2>
           <div class="dr-grid">
             <div><label>Quarter Target</label><input id="dr_f_qtarget"></div>
             <div><label>Monthly Target</label><input id="dr_f_mtarget"></div>
@@ -2808,22 +2799,20 @@ try{
             <div><label>Exchange Ach.</label><input id="dr_f_exach"></div>
             <div><label>Min. Stock Target</label><input id="dr_f_minstock"></div>
           </div>
-          <div class="dr-stepnav"><button class="dr-btn-ghost" onclick="drPrevStep()">← Back</button><button class="dr-btn-primary" onclick="drNextStep()">Next →</button></div>
         </div>
 
-        <div class="dr-card dr-step" data-step="2">
-          <h2>Step 3 of 5 — Enquiry</h2>
+        <div class="dr-card">
+          <h2>Enquiry</h2>
           <div class="dr-grid">
             <div><label>Normal</label><input id="dr_e_normal" type="number" value="0"></div>
             <div><label>Finance</label><input id="dr_e_finance" type="number" value="0"></div>
             <div><label>Bajaj Connect</label><input id="dr_e_connect" type="number" value="0"></div>
           </div>
           <div class="dr-row-total">Total Enquiry <b id="dr_e_total">0</b></div>
-          <div class="dr-stepnav"><button class="dr-btn-ghost" onclick="drPrevStep()">← Back</button><button class="dr-btn-primary" onclick="drNextStep()">Next →</button></div>
         </div>
 
-        <div class="dr-card dr-step" data-step="3">
-          <h2>Step 4 of 5 — Sales (by payment type)</h2>
+        <div class="dr-card">
+          <h2>Sales (by payment type)</h2>
           <div class="dr-grid">
             <div><label>Cash</label><input id="dr_s_cash" type="number" value="0"></div>
             <div><label>Finance (Cash)</label><input id="dr_s_finance" type="number" value="0"></div>
@@ -2833,12 +2822,11 @@ try{
             <div><label>Ex + Self Finance</label><input id="dr_s_exself" type="number" value="0"></div>
           </div>
           <div class="dr-row-total">Total Sales <b id="dr_s_total">0</b></div>
-          <div class="dr-stepnav"><button class="dr-btn-ghost" onclick="drPrevStep()">← Back</button><button class="dr-btn-primary" onclick="drNextStep()">Next →</button></div>
         </div>
 
-        <div class="dr-card dr-step" data-step="4">
-          <h2>Step 5 of 5 — Model-wise Sold Today &amp; Stock</h2>
-          <div class="dr-sub" style="margin-bottom:8px;">Sold type garda Stock automatic ghatcha (opening stock bata). Naya stock aayo bhane, Stock field ma manually update garna sakincha.</div>
+        <div class="dr-card">
+          <h2>Model-wise Sold Today &amp; Stock <button class="dr-btn-ghost dr-smallbtn" onclick="drAutoFillStockFromLive()" style="margin-left:8px;">Auto-fill from Live Stock</button></h2>
+          <div class="dr-sub" style="margin-bottom:8px;">Sold type garda Stock automatic ghatcha (opening stock bata). Naya stock aayo bhane, Stock field ma manually update garna sakincha. Mapped rows (see DR_MODEL_MAP) auto-fill from the live Remaining Stock Report below on New Report / page load.</div>
           <div class="dr-tblwrap">
           <table id="dr_modelTable">
             <thead><tr><th class="dr-model-name">Model</th><th>Sold</th><th>Stock</th></tr></thead>
@@ -2847,13 +2835,25 @@ try{
           </div>
           <div class="dr-row-total">Total Sold (models) <b id="dr_m_soldtotal">0</b><span id="dr_matchMsg"></span></div>
           <div class="dr-row-total">Total Stock <b id="dr_m_stocktotal">0</b></div>
-          <div class="dr-stepnav"><button class="dr-btn-ghost" onclick="drPrevStep()">← Back</button><span></span></div>
+        </div>
+
+        <div class="dr-card">
+          <h2>Remaining Stock Report (Live) <button class="dr-btn-ghost dr-smallbtn" onclick="drRenderLiveStock()" style="margin-left:8px;">Refresh</button></h2>
+          <div class="dr-sub" style="margin-bottom:8px;">Yo Stock module bata live tanincha — naya stock add garda (Purchase / Add Bike) ya bike sale/delivery huda automatic update huncha. Manually kehi bharnu pardaina, ra bholi ko report ma yo aaphai updated dekhincha.</div>
+          <div class="dr-tblwrap">
+          <table id="dr_liveStockTable">
+            <thead><tr><th class="dr-model-name">Model</th><th>Remaining Stock</th></tr></thead>
+            <tbody></tbody>
+          </table>
+          </div>
+          <div class="dr-row-total">Total Remaining Stock <b id="dr_liveStockTotal">0</b></div>
         </div>
 
         <div class="dr-actions">
           <button class="dr-btn-primary" onclick="drGenerateReport()">Generate Report</button>
           <button class="dr-btn-secondary" onclick="drSaveEntry()">Save Today's Entry</button>
           <button class="dr-btn-ghost" onclick="drLoadLatest()">Reload Last Saved</button>
+          <button class="dr-btn-ghost" onclick="drNewReport()">New Report</button>
         </div>
 
         <div class="dr-card" id="dr_outCard" style="display:none;">
@@ -4860,7 +4860,7 @@ function showPage(name,el){
   if(name==='receipt-ledger')renderReceiptLedger();
   if(name==='voucher-ledger')renderVoucherLedger();
   if(name==='valuation-ledger')renderValuationLedger();
-  if(name==='daily-report'&&typeof drRenderHistory==='function')drRenderHistory();
+  if(name==='daily-report'&&typeof drRenderHistory==='function'){drRenderHistory();drRenderLiveStock();}
 }
 
 function openAddModal(){
@@ -11081,6 +11081,38 @@ const DR_MODELS = [
 "Pul N 250","Avenger 160 Street","Avenger 220 Cruise","Dominar 250","Dominar 400"
 ];
 
+// Maps each row above (this report's older/short model names) to the EXACT model name
+// your Stock module uses for that bike, so the live remaining-stock count can be pulled
+// in automatically. Only a row with a confirmed mapping gets auto-filled — everything
+// else stays manual (0 or last-saved value), so nothing gets guessed wrong.
+// To fix a row: open the Stock page, copy the model name exactly as it appears there,
+// and paste it as the value here. IMPORTANT: never map two rows to the same real model
+// — that would count the same bikes twice in "Total Stock" below.
+const DR_MODEL_MAP = {
+  'Platina 100 ES Fi': 'Platina 100 ES BS6',
+  'Discover Disc': null,
+  'Discover ST': null,
+  'Pul 125 Fi': null,               // ambiguous vs 'Pul NS 125 FI' below — confirm and map manually
+  'Pul NS 125 FI': 'Pulsar 125 NS ABS FI BS6',
+  'Pul N 125': 'Pulsar N 125 BS6',
+  'Pul 150 SD': 'Pulsar 150 SD BS6',
+  'Pulsar 150 BS6': null,           // ambiguous — likely the same bike as SD or TD rows, confirm before mapping
+  'Pul 150 TD': null,               // left null — 'Pulsar 150 TD BS6' row below already covers this bike
+  'Pulsar 150 TD BS6': 'Pulsar 150 TD BS6',
+  'Pul N150': 'Pulsar N 150 BS6',
+  'Pul 220 Fi ABS': 'Pulsar 220 F ABS FI BS6',
+  'Pul NS160 DC ABS': null,         // left null — likely same bike as the UG1/UG2 rows below, confirm before mapping
+  'Pul N160 UG2': null,
+  'Pulsar N160 UG1': 'Pulsar N 160 DC ABS BS6',
+  'Pul 200 NS DC FI New': 'Pulsar 200 NS FI DC ABS BS6',
+  'Pulsar NS400': 'Pulsar 400 NS BS6',
+  'Pul N 250': 'Pulsar N 250 DC ABS BS6',
+  'Avenger 160 Street': 'Avenger 160 Street ABS',
+  'Avenger 220 Cruise': 'Avenger 220 Cruise',
+  'Dominar 250': null,              // not in current price list — confirm real name if still stocked
+  'Dominar 400': 'Dominar 400 ABS BS6'
+};
+
 let drOpeningStock = DR_MODELS.map(()=>0);
 try{
   const savedStock = JSON.parse(localStorage.getItem('dah_model_stock')||'null');
@@ -11127,31 +11159,86 @@ try{
   pageEl.addEventListener('input', drRecalc);
   drRecalc();
 
-  const steps = Array.from(pageEl.querySelectorAll('.dr-step'));
-  window._drSteps = steps;
-  window._drCurStep = 0;
-  drRenderProgress();
-
   pageEl.addEventListener('keydown', function(ev){
     if(ev.key !== 'Enter') return;
     const el = ev.target;
     if(!(el.tagName === 'INPUT')) return;
     ev.preventDefault();
-    const activeStep = steps[window._drCurStep];
-    const fields = Array.from(activeStep.querySelectorAll('input'));
+    const fields = Array.from(pageEl.querySelectorAll('input'));
     const idx = fields.indexOf(el);
     if(idx === -1) return;
     if(idx < fields.length - 1){
       fields[idx+1].focus();
       fields[idx+1].select && fields[idx+1].select();
     } else {
-      if(window._drCurStep < steps.length - 1){ drNextStep(); }
-      else { drGenerateReport(); }
+      drGenerateReport();
     }
   });
 
   drRenderHistory();
+  drRenderLiveStock();
+  drAutoFillStockFromLive();
 })();
+
+// Live Remaining Stock Report — reads real bike-by-bike stock (dah2-stock) so it
+// updates automatically whenever stock is added (Purchase/Add Bike) or sold/delivered,
+// with no manual entry. Because it always reads the current data, tomorrow's report
+// shows the correct remaining stock on its own — no carry-over step needed.
+function drGetLiveStockCounts(){
+  try{
+    const raw = localStorage.getItem('dah2-stock');
+    const arr = raw ? JSON.parse(raw) : (Array.isArray(stock)?stock:[]);
+    const counts = {};
+    arr.forEach(s=>{
+      if(!s || !s.model) return;
+      if((s.status||'in')==='out') return; // sold bikes are not "remaining"
+      const m = String(s.model).trim();
+      if(!m) return;
+      counts[m] = (counts[m]||0)+1;
+    });
+    return counts;
+  }catch(e){ return {}; }
+}
+
+function drRenderLiveStock(){
+  const tbody = document.querySelector('#dr_liveStockTable tbody');
+  if(!tbody) return {counts:{},total:0};
+  const counts = drGetLiveStockCounts();
+  const models = Object.keys(counts).sort((a,b)=> counts[b]-counts[a] || a.localeCompare(b));
+  let total = 0;
+  if(!models.length){
+    tbody.innerHTML = '<tr><td colspan="2" style="color:var(--dr-muted)">No live stock data found.</td></tr>';
+  } else {
+    tbody.innerHTML = models.map(m=>{ total += counts[m]; return `<tr><td class="dr-model-name">${m}</td><td>${counts[m]}</td></tr>`; }).join('');
+  }
+  const totalEl = document.getElementById('dr_liveStockTotal');
+  if(totalEl) totalEl.textContent = total;
+  return {counts, total};
+}
+
+// Pulls live remaining-stock counts into the "Model-wise Sold Today & Stock" table above.
+// For each row: use the DR_MODEL_MAP entry if one is set; otherwise fall back to matching
+// the row's own name directly against live stock (case-insensitive, exact) — this already
+// covers rows like "Pulsar 150 TD BS6" or "Avenger 220 Cruise" that are spelled the same
+// way in both places. Only a genuine match (mapped or exact) updates the row.
+function drAutoFillStockFromLive(){
+  const tbody = document.querySelector('#dr_modelTable tbody');
+  if(!tbody) return;
+  const liveCounts = drGetLiveStockCounts();
+  const findKey = name => Object.keys(liveCounts).find(k=>k.toLowerCase().trim()===String(name).toLowerCase().trim());
+  DR_MODELS.forEach((m,i)=>{
+    const target = DR_MODEL_MAP[m];
+    const key = target ? findKey(target) : findKey(m);
+    if(key===undefined) return;
+    const stockEl = tbody.querySelector(`.dr-stock[data-i="${i}"]`);
+    const soldEl = tbody.querySelector(`.dr-sold[data-i="${i}"]`);
+    if(!stockEl) return;
+    const sold = Number(soldEl && soldEl.value)||0;
+    drOpeningStock[i] = liveCounts[key];
+    stockEl.value = Math.max(0, liveCounts[key]-sold);
+  });
+  drRecalc();
+}
 
 function drSumIds(ids){ return ids.reduce((a,id)=>a+(Number(document.getElementById(id).value)||0),0); }
 function drSumClass(cls){ return Array.from(document.querySelectorAll('#page-daily-report .'+cls)).reduce((a,el)=>a+(Number(el.value)||0),0); }
@@ -11170,21 +11257,6 @@ function drRecalc(){
   else { msg.textContent=' ⚠ does not match Total Sales ('+sTotal+')'; msg.className='dr-match-bad'; }
 }
 
-function drShowStep(i){
-  const steps = window._drSteps;
-  steps.forEach(s=>s.classList.remove('active'));
-  window._drCurStep = Math.max(0, Math.min(steps.length-1, i));
-  steps[window._drCurStep].classList.add('active');
-  drRenderProgress();
-  steps[window._drCurStep].scrollIntoView({behavior:'smooth', block:'start'});
-}
-function drNextStep(){ drShowStep(window._drCurStep+1); }
-function drPrevStep(){ drShowStep(window._drCurStep-1); }
-function drRenderProgress(){
-  const bar = document.getElementById('dr_progressBar');
-  bar.innerHTML = window._drSteps.map((_,i)=>`<span class="${i<=window._drCurStep?'dr-done':''}"></span>`).join('');
-}
-
 function drBuildReportText(){
   const v = id => document.getElementById(id).value || '';
   const stockLines = DR_MODELS.map((m,i)=>{
@@ -11196,6 +11268,7 @@ function drBuildReportText(){
   const soldLines = soldRows.length
     ? soldRows.map(r=>`${r.m} – ${r.qty}`).join('\n')
     : 'No models sold today.';
+  drRenderLiveStock(); // keep the on-page live card current; not included in the report text itself
 
   return `Date: ${drFormatDate(v('dr_f_date'))}
 Dealer Name: ${v('dr_f_dealer')}
@@ -11292,6 +11365,9 @@ async function drSaveEntry(silent){
     state.enquiryTotal = document.getElementById('dr_e_total').textContent;
     state.salesTotal = document.getElementById('dr_s_total').textContent;
     state.stockTotal = document.getElementById('dr_m_stocktotal').textContent;
+    const liveSnap = drGetLiveStockCounts();
+    state.liveStock = liveSnap;
+    state.liveStockTotal = Object.values(liveSnap).reduce((a,v)=>a+v,0);
     localStorage.setItem('dah_report_'+date, JSON.stringify(state));
     // maintain index
     let idx = JSON.parse(localStorage.getItem('dah_report_index')||'[]');
@@ -11321,9 +11397,25 @@ function drLoadEntry(date){
     drApplyState(state);
     document.getElementById('dr_reportOut').textContent = state.report;
     document.getElementById('dr_outCard').style.display='block';
-    drShowStep(0);
     document.querySelector('#page-daily-report .dr-wrap').scrollIntoView({behavior:'smooth', block:'start'});
   }catch(e){}
+}
+
+function drNewReport(){
+  const dateEl = document.getElementById('dr_f_date');
+  if(dateEl) dateEl.valueAsDate = new Date();
+  ['dr_f_payment','dr_f_lifting','dr_f_qtarget','dr_f_mtarget','dr_f_extarget','dr_f_exach','dr_f_minstock'].forEach(id=>{
+    const el = document.getElementById(id); if(el) el.value='';
+  });
+  ['dr_e_normal','dr_e_finance','dr_e_connect','dr_s_cash','dr_s_finance','dr_s_self','dr_s_excash','dr_s_exfin','dr_s_exself'].forEach(id=>{
+    const el = document.getElementById(id); if(el) el.value=0;
+  });
+  document.querySelectorAll('#page-daily-report .dr-sold').forEach(el=>{ el.value=0; });
+  drAutoFillStockFromLive();
+  drRecalc();
+  document.getElementById('dr_outCard').style.display='none';
+  document.getElementById('dr_reportOut').textContent='';
+  document.querySelector('#page-daily-report .dr-wrap').scrollIntoView({behavior:'smooth', block:'start'});
 }
 
 function drDeleteEntry(date){
@@ -11390,7 +11482,7 @@ function drRenderHistory(){
       const n = k => s[k]||0;
       const div = document.createElement('div');
       div.className='dr-hist-item';
-      div.innerHTML = `<div><b>${drFormatDate(date)}</b> <span class="dr-d">Enquiry: ${s.enquiryTotal||0} (Normal ${n('dr_e_normal')} · Finance ${n('dr_e_finance')} · Connect ${n('dr_e_connect')}) · Sales: ${s.salesTotal||0} · Stock: ${s.stockTotal||0}<br>Cash ${n('dr_s_cash')} · Finance Cash ${n('dr_s_finance')} · Self ${n('dr_s_self')} · Ex+Cash ${n('dr_s_excash')} · Finance Exchange ${n('dr_s_exfin')} · Ex+Self ${n('dr_s_exself')}</span></div>
+      div.innerHTML = `<div><b>${drFormatDate(date)}</b> <span class="dr-d">Enquiry: ${s.enquiryTotal||0} (Normal ${n('dr_e_normal')} · Finance ${n('dr_e_finance')} · Connect ${n('dr_e_connect')}) · Sales: ${s.salesTotal||0} · Stock: ${s.stockTotal||0}${s.liveStockTotal!==undefined?' · Remaining Stock (live at save): '+s.liveStockTotal:''}<br>Cash ${n('dr_s_cash')} · Finance Cash ${n('dr_s_finance')} · Self ${n('dr_s_self')} · Ex+Cash ${n('dr_s_excash')} · Finance Exchange ${n('dr_s_exfin')} · Ex+Self ${n('dr_s_exself')}</span></div>
         <span style="display:flex;gap:6px;flex-shrink:0;">
           <button class="dr-btn-ghost dr-smallbtn" onclick="drLoadEntry('${date}')">Edit</button>
           <button class="dr-btn-ghost dr-smallbtn" style="color:#C0392B" onclick="drDeleteEntry('${date}')">Delete</button>
