@@ -892,6 +892,10 @@ try{
       <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
       Delivery Sheet
     </div>
+    <div class="nav-item" onclick="showPage('delivery-ledger',this)" data-page="delivery-ledger">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 19V5a2 2 0 0 1 2-2h10l4 4v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><path d="M14 3v4h4"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="14" y2="17"/></svg>
+      Delivery Ledger
+    </div>
     <div class="nav-item" onclick="showPage('quotation',this)" data-page="quotation">
       <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/></svg>
       Bike Quotation
@@ -1208,7 +1212,10 @@ try{
           <h2>🏍️ Bike Delivery Sheet</h2>
           <input type="file" id="logo-file" accept="image/*" style="display:none" onchange="handleLogoUpload(event)">
           <button class="btn btn-blue" onclick="document.getElementById('logo-file').click()">📷 Logo</button>
+          <span id="d-ledger-edit-badge" style="display:none;font-size:12px;font-weight:700;color:#0b2d5c;background:#e8f0fe;padding:4px 10px;border-radius:6px"></span>
           <button class="btn btn-secondary" onclick="clearDeliveryForm()">🗑️ Clear</button>
+          <button class="btn btn-blue-solid" onclick="saveDeliveryToLedger()">📒 Save to Ledger</button>
+          <button class="btn btn-secondary" onclick="showPage('delivery-ledger',document.querySelector('.nav-item[data-page=&quot;delivery-ledger&quot;]'))">📖 View Ledger</button>
           <button class="btn btn-green-solid" onclick="saveDeliveryPDF()">💾 Save PDF</button>
           <button class="btn btn-red" onclick="window.print()">🖨️ Print</button>
         </div>
@@ -1407,6 +1414,81 @@ try{
           </button>
         </div>
 
+      </div>
+    </div>
+
+    <!-- ══ DELIVERY LEDGER PAGE ══ -->
+    <div class="page-section" id="page-delivery-ledger">
+      <div class="receipt-wrap" style="max-width:1200px">
+        <div class="table-card receipt-ledger-card no-print" style="max-width:1200px;margin-bottom:0;border-bottom-left-radius:0;border-bottom-right-radius:0;border-bottom:none">
+          <div class="table-header" style="flex-wrap:wrap;gap:8px">
+            <span class="table-title">🚚 Delivery Sheet Ledger</span>
+            <span id="dl-count" style="font-size:13px;font-weight:600;color:var(--green);flex:1"></span>
+            <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+              <select id="dl-type-filter" onchange="renderDeliveryLedger()" style="padding:7px 8px;border:1px solid var(--gray-200,#ddd);border-radius:8px;font-size:12.5px">
+                <option value="">All</option>
+                <option value="delivery">Delivery</option>
+                <option value="transfer">Stock Transfer</option>
+              </select>
+              <div class="search-box" style="width:220px">
+                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                <input id="dl-search" placeholder="Customer / model / chassis…" oninput="renderDeliveryLedger()" style="width:180px">
+              </div>
+              <button class="btn btn-blue-solid btn-sm" onclick="newDeliverySheet()">➕ New Sheet</button>
+              <button class="btn btn-secondary btn-sm" onclick="exportDeliveryLedgerExcel()">⬇ Excel</button>
+              <button class="btn btn-red btn-sm" onclick="printDeliveryLedger()">🖨️ Print List</button>
+            </div>
+          </div>
+        </div>
+        <div class="table-card receipt-ledger-card no-print" style="max-width:1200px;border-top-left-radius:0;border-top-right-radius:0">
+          <div class="tbl-wrap" style="max-height:70vh">
+            <table id="dl-table">
+              <thead><tr>
+                <th>S.N.</th><th>No.</th><th>Date</th><th>Type</th><th>Customer / To</th><th>Phone</th>
+                <th>Bike Model</th><th>Colour</th><th>Engine No.</th><th>Chassis No.</th><th>Reg. No.</th>
+                <th style="text-align:right">MRP</th><th style="text-align:right">Discount</th><th style="text-align:right">Selling Price</th>
+                <th>Mode of Purchase</th><th>Insurance</th><th style="text-align:center">Actions</th>
+              </tr></thead>
+              <tbody id="dl-body"></tbody>
+            </table>
+          </div>
+        </div>
+        <!-- PRINT AREA (list) -->
+        <div id="dl-print-area" style="display:none">
+          <div style="text-align:center;margin-bottom:10px">
+            <div style="font-size:18px;font-weight:800;letter-spacing:1px">DIVYA AUTO HUB PVT. LTD.</div>
+            <div style="font-size:12px;color:#555;margin-top:2px">Delivery Sheet Ledger</div>
+            <div style="font-size:11px;color:#888;margin-top:1px" id="dl-print-meta"></div>
+          </div>
+          <table style="width:100%;border-collapse:collapse;font-size:9.5px">
+            <thead><tr style="background:#0a1e42;color:#fff">
+              <th style="border:1px solid #999;padding:4px 5px">S.N.</th>
+              <th style="border:1px solid #999;padding:4px 5px">No.</th>
+              <th style="border:1px solid #999;padding:4px 5px">Date</th>
+              <th style="border:1px solid #999;padding:4px 5px">Customer / To</th>
+              <th style="border:1px solid #999;padding:4px 5px">Phone</th>
+              <th style="border:1px solid #999;padding:4px 5px">Model</th>
+              <th style="border:1px solid #999;padding:4px 5px">Chassis No.</th>
+              <th style="border:1px solid #999;padding:4px 5px">Engine No.</th>
+              <th style="border:1px solid #999;padding:4px 5px;text-align:right">Selling Price</th>
+              <th style="border:1px solid #999;padding:4px 5px">Mode</th>
+            </tr></thead>
+            <tbody id="dl-print-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ DELIVERY VIEW MODAL ══ -->
+    <div class="overlay" id="modal-delivery-view">
+      <div class="modal" style="max-width:640px">
+        <div class="modal-head"><h2 id="dv-title">Delivery Sheet Details</h2><button class="modal-close" onclick="closeModal('delivery-view')">✕</button></div>
+        <div class="modal-body" id="dv-body"></div>
+        <div class="modal-foot">
+          <button class="btn btn-red" onclick="if(_dlViewIndex!==null){closeModal('delivery-view');printDeliveryFromLedger(_dlViewIndex)}">🖨️ Print</button>
+          <button class="btn btn-blue" onclick="if(_dlViewIndex!==null){closeModal('delivery-view');loadDeliveryToForm(_dlViewIndex)}">✏ Edit</button>
+          <button class="btn btn-secondary" onclick="closeModal('delivery-view')">Close</button>
+        </div>
       </div>
     </div>
 
@@ -3571,7 +3653,7 @@ let suppressAutoBackup=false;
 async function dbSet(k,v) {
   try {
     localStorage.setItem(k,JSON.stringify(v));
-    if(!suppressAutoBackup&&(k==='dah2-stock'||k==='dah2-sales'||k==='dah2-bookings'||k==='dah2-receipts'||k==='dah2-vouchers'||k==='dah2-transfers'||k==='dah2-purchases'||k==='dah2-payable-ledger'||k==='dah2-valuation-sheets'||k==='dah2-exchangedoc-ledger')){
+    if(!suppressAutoBackup&&(k==='dah2-stock'||k==='dah2-sales'||k==='dah2-bookings'||k==='dah2-receipts'||k==='dah2-vouchers'||k==='dah2-transfers'||k==='dah2-purchases'||k==='dah2-payable-ledger'||k==='dah2-valuation-sheets'||k==='dah2-exchangedoc-ledger'||k==='dah2-delivery-ledger')){
       scheduleAutoBackup();
       scheduleFirebaseSync();
     }
@@ -3590,7 +3672,7 @@ async function dbSet(k,v) {
 //  ☁️ SUPABASE CLOUD SYNC (automatic, cross-device)
 // ══════════════════════════════════════════════
 const SYNC_TABLE='dah_sync';
-const SYNC_KEYS=['dah2-stock','dah2-sales','dah2-bookings','dah2-receipts','dah2-vouchers','dah2-valuation-sheets','dah2-exchangedoc-ledger','dah2-purchases','dah2-payable-ledger','dah2-transfers','dah2-price-list'];
+const SYNC_KEYS=['dah2-stock','dah2-sales','dah2-bookings','dah2-receipts','dah2-vouchers','dah2-valuation-sheets','dah2-exchangedoc-ledger','dah2-delivery-ledger','dah2-purchases','dah2-payable-ledger','dah2-transfers','dah2-price-list'];
 let cloudPushTimer=null;
 const cloudPushQueue={};
 
@@ -3668,10 +3750,12 @@ async function manualSyncNow(){
     receipts=await dbGet('dah2-receipts')||[];
     vouchers=await dbGet('dah2-vouchers')||[];
     valuationSheets=await dbGet('dah2-valuation-sheets')||[];
+    deliveryLedger=await dbGet('dah2-delivery-ledger')||[];
     transfers=await dbGet('dah2-transfers')||[];
     if(typeof loadPurchases==='function')loadPurchases();
     populateModelSelects();render();renderReceiptLedger();renderVoucherLedger();
     if(typeof renderValuationLedger==='function')renderValuationLedger();
+    if(typeof renderDeliveryLedger==='function')renderDeliveryLedger();
     if(typeof loadPayables==='function')loadPayables();
     if(typeof renderPayableLedger==='function'){renderPayableLedger();renderPayableMetrics();renderPayableAlerts();}
     toast('✅ Sync complete');
@@ -4079,6 +4163,7 @@ async function init() {
   initFirebaseIfConfigured();
   await loadValuationSheets();
   await loadExchangeDocLedger();
+  await loadDeliveryLedger();
   setValuationTodayDate();
   // Auto sheet no
   const sheetEl=document.getElementById('val-sheet-no');
@@ -4838,7 +4923,7 @@ function showPage(name,el){
   document.getElementById('page-'+name).classList.add('active');
   el.classList.add('active');
   currentPage=name;
-  const titles={stock:'Bike Stock',sales:'Sales Record',bookings:'Customer Bookings',delivery:'Bike Delivery Sheet',quotation:'Bike Quotation',['price-list']:'Bajaj Price List',['test-ride']:'Test Ride Form',['gift-coupon']:'Accessories Gift Coupon',['exchange-doc']:'Exchange Bike Document',['file-converter']:'File Converter',['emi-calc']:'Hulas EMI Calculator',receipt:'Cash Receipt',['receipt-ledger']:'Receipt Ledger',voucher:'Payment Voucher',['voucher-ledger']:'Voucher Ledger',valuation:'Valuation Sheet',['valuation-ledger']:'Valuation Ledger',dashboard:'Dashboard',calendar:'Nepali Calendar',['daily-report']:'Daily Report'};
+  const titles={stock:'Bike Stock',sales:'Sales Record',bookings:'Customer Bookings',delivery:'Bike Delivery Sheet',['delivery-ledger']:'Delivery Ledger',quotation:'Bike Quotation',['price-list']:'Bajaj Price List',['test-ride']:'Test Ride Form',['gift-coupon']:'Accessories Gift Coupon',['exchange-doc']:'Exchange Bike Document',['file-converter']:'File Converter',['emi-calc']:'Hulas EMI Calculator',receipt:'Cash Receipt',['receipt-ledger']:'Receipt Ledger',voucher:'Payment Voucher',['voucher-ledger']:'Voucher Ledger',valuation:'Valuation Sheet',['valuation-ledger']:'Valuation Ledger',dashboard:'Dashboard',calendar:'Nepali Calendar',['daily-report']:'Daily Report'};
   document.getElementById('page-title').textContent=titles[name];
   // mobile page bar sync
   const mobTitle=document.getElementById('mob-page-title');
@@ -4847,7 +4932,7 @@ function showPage(name,el){
   if(mobTitle) mobTitle.textContent=titles[name];
   if(mobBar) mobBar.style.display=window.innerWidth<=768?'flex':'none';
   const btn=document.getElementById('add-btn');
-  if(name==='delivery'||name==='quotation'||name==='price-list'||name==='test-ride'||name==='gift-coupon'||name==='exchange-doc'||name==='file-converter'||name==='emi-calc'||name==='dashboard'||name==='receipt'||name==='receipt-ledger'||name==='voucher'||name==='voucher-ledger'||name==='valuation'||name==='valuation-ledger'||name==='calendar'||name==='daily-report'){
+  if(name==='delivery'||name==='delivery-ledger'||name==='quotation'||name==='price-list'||name==='test-ride'||name==='gift-coupon'||name==='exchange-doc'||name==='file-converter'||name==='emi-calc'||name==='dashboard'||name==='receipt'||name==='receipt-ledger'||name==='voucher'||name==='voucher-ledger'||name==='valuation'||name==='valuation-ledger'||name==='calendar'||name==='daily-report'){
     btn.style.display='none';
     if(mobAddBtn) mobAddBtn.style.display='none';
   } else {
@@ -4860,6 +4945,7 @@ function showPage(name,el){
   if(name==='receipt-ledger')renderReceiptLedger();
   if(name==='voucher-ledger')renderVoucherLedger();
   if(name==='valuation-ledger')renderValuationLedger();
+  if(name==='delivery-ledger')renderDeliveryLedger();
   if(name==='daily-report'&&typeof drRenderHistory==='function'){drRenderHistory();drRenderLiveStock();}
 }
 
@@ -5842,16 +5928,24 @@ async function confirmDeliverAndMarkSold(){
   const saleObj={cust:custName,phone:document.getElementById('d-cust-phone').value.trim(),addr:document.getElementById('d-cust-addr').value.trim(),model,bikeno,colour,colorHex:item?item.colorHex:'#9e9e9e',engineno:item?item.engineno:engineno,chassisno:item?item.chassisno:chassisno,amt,pay,date,notes:'Delivered via Delivery Sheet',stockId:item?item.id:null,discount,sellingPrice,insuranceType:deliveryInsuranceType,insuranceName:deliveryInsuranceName,namsari:deliveryNamsari?'Yes':''};
   sales.push(saleObj);
   await dbSet('dah2-sales',sales);
+  // Link this sale to the Delivery Ledger entry saved right below (no duplicate), and make sure
+  // the ledger copy has engine/chassis/reg no. even when they were auto-matched from stock.
+  _pendingDeliverSale=saleObj;
+  if(item){
+    const fillIf=(id,v)=>{const e=document.getElementById(id);if(e&&!e.value.trim()&&v)e.value=v;};
+    fillIf('d-engine-no',item.engineno);fillIf('d-chassis-no',item.chassisno);fillIf('d-reg-no',item.bikeno);fillIf('d-bike-color',item.colour);
+  }
 
   // Show success banner
   const banner=document.getElementById('stock-out-banner');
   banner.classList.add('visible');
   document.getElementById('stock-out-msg').textContent=`✅ ${model} — ${custName} lai deliver bhayo! Stock "Sold/Out" bhayo.`;
 
+  try{await saveDeliveryToLedger(true);}catch(e){console.warn('Delivery ledger auto-save failed',e);}
   render();
   deliveryStockMatch=null;
   showStockMatchInfo(null);
-  toast('🎉 Deliver bhayo! Stock auto updated ✓');
+  toast('🎉 Deliver bhayo! Stock auto updated + Ledger ma save ✓');
 }
 
 // ══════════════════════════════════════════════
@@ -5963,10 +6057,11 @@ async function confirmStockTransfer(){
   banner.classList.add('visible');
   document.getElementById('stock-out-msg').textContent=`🔁 ${model} — ${fromShowroom} bata ${toShowroom} ma transfer bhayo!`;
 
+  try{await saveDeliveryToLedger(true);}catch(e){console.warn('Delivery ledger auto-save failed',e);}
   render();
   deliveryStockMatch=null;
   showStockMatchInfo(null);
-  toast('🔁 Stock Transfer complete ✓');
+  toast('🔁 Stock Transfer complete + Ledger ma save ✓');
 }
 
 // Quick reverse of a transfer — used from the Stock table when a bike that was
@@ -6006,6 +6101,7 @@ function syncAckName(){
 
 function clearDeliveryForm(silent=false){
   if(!silent&&!confirm('Delivery form clear garne?'))return;
+  deliveryLedgerEditId=null;updateDeliveryEditBadge();
   ['d-cust-name','d-cust-phone','d-cust-addr','d-bike-color','d-engine-no','d-chassis-no','d-reg-no','d-model-year','d-discount','d-marked-price','d-selling-price','d-selling-price-words','d-insurance-name','d-ack-name'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   ['d-cust-district','d-cust-muni'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   document.getElementById('d-bike-model').value='';
@@ -6303,6 +6399,321 @@ function prepareDeliveryPrintMirrors(){
 }
 window.addEventListener('beforeprint',prepareDeliveryPrintMirrors);
 
+// ══════════════════════════════════════════════
+//  DELIVERY LEDGER  (Delivery Sheet / Stock Transfer register)
+// ══════════════════════════════════════════════
+let deliveryLedger=[];
+let deliveryLedgerEditId=null;
+let _dlViewIndex=null;
+let _pendingDeliverSale=null;
+
+async function loadDeliveryLedger(){
+  deliveryLedger=await dbGet('dah2-delivery-ledger')||[];
+}
+const _dlEsc=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const _dlNum=s=>parseInt(String(s||'').replace(/[^0-9]/g,''))||0;
+const _dlFmt=n=>n?Number(n).toLocaleString('en-IN'):'—';
+
+function nextDeliveryNo(){
+  let max=0;
+  deliveryLedger.forEach(r=>{const m=/(\d+)/.exec(r.no||'');if(m)max=Math.max(max,parseInt(m[1]));});
+  return 'D-'+String(max+1).padStart(3,'0');
+}
+
+function updateDeliveryEditBadge(){
+  const b=document.getElementById('d-ledger-edit-badge');
+  if(!b)return;
+  const r=deliveryLedgerEditId!==null?deliveryLedger.find(x=>String(x.id)===String(deliveryLedgerEditId)):null;
+  if(r){b.style.display='inline-block';b.textContent='✏ Ledger entry '+(r.no||'')+' edit hudai';}
+  else{b.style.display='none';b.textContent='';}
+}
+
+// Every input/select inside the delivery sheet, keyed by id (or by order among id-less fields)
+function deliveryFieldList(){
+  const doc=document.getElementById('delivery-doc');
+  const out=[];let n=0;
+  if(!doc)return out;
+  doc.querySelectorAll('input,select,textarea').forEach(el=>{
+    if(el.type==='file')return;
+    out.push({el,key:el.id||('n'+(n++))});
+  });
+  return out;
+}
+
+function collectDeliveryRecord(){
+  const g=id=>{const e=document.getElementById(id);return e?String(e.value||'').trim():'';};
+  const mode=(typeof deliveryMode!=='undefined'&&deliveryMode==='transfer')?'transfer':'delivery';
+  const fields={};
+  deliveryFieldList().forEach(o=>{
+    fields[o.key]=(o.el.type==='checkbox'||o.el.type==='radio')?{c:!!o.el.checked}:{v:o.el.value||''};
+  });
+  const modeItem=(cbId)=>{
+    const cb=document.getElementById(cbId);
+    if(!cb||!cb.checked)return null;
+    const it=cb.closest('.mode-item');
+    const d=it&&it.querySelector('.mode-detail');
+    return (d&&d.value.trim())||'';
+  };
+  const mp=[];
+  const cash=modeItem('d-mode-cash'),exch=modeItem('d-mode-exchange'),fin=modeItem('d-mode-finance');
+  if(cash!==null)mp.push('Cash'+(cash?' Rs.'+cash:''));
+  if(exch!==null)mp.push('Exchange'+(exch?' ('+exch+')':''));
+  if(fin!==null)mp.push('Finance'+(fin?' ('+fin+')':''));
+  const ins=[];
+  if(document.getElementById('d-ins-full').checked)ins.push('Full Insurance');
+  if(document.getElementById('d-ins-3rd').checked)ins.push('3rd Party');
+  if(document.getElementById('d-ins-self').checked)ins.push('Self Insurance');
+  return {
+    mode,
+    date:g('d-date'),
+    custName:g('d-cust-name'),phone:g('d-cust-phone'),district:g('d-cust-district'),muni:g('d-cust-muni'),addr:g('d-cust-addr'),
+    model:g('d-bike-model'),colour:g('d-bike-color'),engineno:g('d-engine-no'),chassisno:g('d-chassis-no'),regNo:g('d-reg-no'),modelYear:g('d-model-year'),
+    mrp:g('d-marked-price'),discount:g('d-discount'),selling:g('d-selling-price'),sellingWords:g('d-selling-price-words'),
+    insTypes:ins.join(' + '),insName:g('d-insurance-name'),namsari:!!document.getElementById('d-namsari').checked,
+    purchaseMode:mp.join(' + '),
+    transferTo:g('d-transfer-to'),transferBy:g('d-transfer-by'),receivedBy:g('d-transfer-received-by'),remarks:g('d-transfer-remarks'),
+    fields
+  };
+}
+
+async function saveDeliveryToLedger(silent){
+  silent=(silent===true);
+  const rec=collectDeliveryRecord();
+  if(!rec.model){if(!silent)alert('Bike model select garus!');return null;}
+  if(rec.mode==='delivery'&&!rec.custName){if(!silent)alert('Customer naam raakhnus!');return null;}
+  if(rec.mode==='transfer'&&!rec.transferTo){if(!silent)alert('To Showroom select garnus!');return null;}
+  let idx=-1;
+  if(deliveryLedgerEditId!==null)idx=deliveryLedger.findIndex(r=>String(r.id)===String(deliveryLedgerEditId));
+  if(idx<0){
+    const dup=deliveryLedger.findIndex(r=>r.mode===rec.mode&&((rec.chassisno&&r.chassisno===rec.chassisno)||(rec.engineno&&r.engineno===rec.engineno)));
+    if(dup>-1){
+      if(silent||confirm('Yo '+(rec.chassisno?'chassis':'engine')+' no. ko sheet pahile nai ledger ma cha ('+(deliveryLedger[dup].no||'')+').\n\nOK = tyahi entry update garne\nCancel = naya entry banaune'))idx=dup;
+    }
+  }
+  const now=new Date().toISOString();
+  if(idx>-1){
+    const old=deliveryLedger[idx];
+    deliveryLedger[idx]={...old,...rec,id:old.id,no:old.no,savedAt:old.savedAt||now,updatedAt:now};
+    deliveryLedgerEditId=old.id;
+    if(!silent)toast('✅ '+old.no+' ledger ma update bhayo!');
+  }else{
+    const entry={...rec,id:Date.now(),no:nextDeliveryNo(),savedAt:now,updatedAt:now};
+    deliveryLedger.push(entry);
+    deliveryLedgerEditId=entry.id;
+    if(!silent)toast('✅ '+entry.no+' ledger ma save bhayo!');
+  }
+  await dbSet('dah2-delivery-ledger',deliveryLedger);
+  let saleMsg='';
+  if(rec.mode==='delivery'){
+    try{saleMsg=await upsertSaleFromDelivery(rec,deliveryLedgerEditId);}catch(e){console.warn('Sales record sync failed',e);}
+  }
+  updateDeliveryEditBadge();
+  renderDeliveryLedger();
+  if(!silent&&saleMsg)toast('✅ Ledger + Sales Record dubai ma save bhayo ('+saleMsg+')');
+  return true;
+}
+
+// Keep the Sales Record in step with the Delivery Ledger entry (linked by ledgerId).
+// Does NOT change stock status — "Deliver & Mark Stock Sold" still does that.
+async function upsertSaleFromDelivery(rec,ledgerId){
+  const num=v=>parseInt(String(v||'').replace(/[^0-9]/g,''))||0;
+  const modes=[];
+  if(document.getElementById('d-mode-cash').checked)modes.push('Cash');
+  if(document.getElementById('d-mode-exchange').checked)modes.push('Exchange');
+  if(document.getElementById('d-mode-finance').checked)modes.push('Finance');
+  const amt=num(rec.mrp);
+  const sellingPrice=num(rec.selling)||Math.max(amt-num(rec.discount),0);
+  let idx=-1;
+  if(_pendingDeliverSale){idx=sales.indexOf(_pendingDeliverSale);_pendingDeliverSale=null;}
+  if(idx<0)idx=sales.findIndex(x=>String(x.ledgerId)===String(ledgerId));
+  if(idx<0){
+    idx=sales.findIndex(x=>!x.ledgerId&&x.cust===rec.custName&&x.model===rec.model&&((rec.chassisno&&x.chassisno===rec.chassisno)||(rec.engineno&&x.engineno===rec.engineno)));
+  }
+  const fields={cust:rec.custName,phone:rec.phone,addr:rec.addr,model:rec.model,bikeno:rec.regNo,colour:rec.colour,
+    engineno:rec.engineno,chassisno:rec.chassisno,amt,pay:modes.join(' + ')||'Cash',discount:num(rec.discount),sellingPrice,
+    insuranceType:rec.insTypes,insuranceName:rec.insName,namsari:rec.namsari?'Yes':'',modelYear:rec.modelYear,ledgerId};
+  ['bikeno','colour','engineno','chassisno','phone','addr','modelYear','insuranceType','insuranceName'].forEach(k=>{if(fields[k]==='')delete fields[k];});
+  if(idx>-1){
+    sales[idx]={...sales[idx],...fields};
+    await dbSet('dah2-sales',sales);
+    render();
+    return 'Sales Record update';
+  }
+  const it=stock.find(x=>(rec.chassisno&&x.chassisno===rec.chassisno)||(rec.engineno&&x.engineno===rec.engineno));
+  sales.push({...fields,colorHex:it?it.colorHex:'#9e9e9e',date:today(),nepaliDate:rec.date,notes:'Delivered via Delivery Sheet',stockId:it?it.id:null});
+  await dbSet('dah2-sales',sales);
+  render();
+  return 'Sales Record ma thapiyo';
+}
+
+function applyDeliverySnapshot(rec){
+  const mode=rec.mode==='transfer'?'transfer':'delivery';
+  const radio=document.getElementById(mode==='transfer'?'mode-transfer':'mode-delivery');
+  if(radio)radio.checked=true;
+  setDeliveryMode(mode);
+  const map={};
+  deliveryFieldList().forEach(o=>{map[o.key]=o.el;});
+  const f=rec.fields||{};
+  Object.keys(f).forEach(k=>{
+    const el=map[k];if(!el)return;
+    if(el.type==='checkbox'||el.type==='radio')el.checked=!!f[k].c;
+    else el.value=f[k].v||'';
+  });
+  if(mode==='transfer')updateTransferToDisplay();
+  deliveryStockMatch=null;
+  const mi=document.getElementById('stock-match-info');if(mi)mi.classList.remove('visible');
+  const sb=document.getElementById('stock-out-banner');if(sb)sb.classList.remove('visible');
+}
+
+// Load a saved entry into the delivery sheet (edit mode)
+function loadDeliveryToForm(i,quiet){
+  const r=deliveryLedger[i];if(!r)return;
+  applyDeliverySnapshot(r);
+  deliveryLedgerEditId=r.id;
+  showPage('delivery',document.querySelector('.nav-item[data-page="delivery"]'));
+  updateDeliveryEditBadge();
+  if(!quiet)toast('Sheet load bhayo — change gari "📒 Save to Ledger" click garnus ✓');
+}
+
+// Print one saved entry exactly like the delivery sheet (one A4 page)
+function printDeliveryFromLedger(i){
+  loadDeliveryToForm(i,true);
+  setTimeout(()=>{prepareDeliveryPrintMirrors();saveDeliveryPDF();},350);
+}
+
+function newDeliverySheet(){
+  clearDeliveryForm(true);
+  const d=document.getElementById('d-date');if(d)d.value=bsTodayStr();
+  showPage('delivery',document.querySelector('.nav-item[data-page="delivery"]'));
+}
+
+function viewDeliveryDetail(i){
+  const r=deliveryLedger[i];if(!r)return;
+  _dlViewIndex=i;
+  const isT=r.mode==='transfer';
+  const row=(l,v,full)=>`<div${full?' style="grid-column:1/-1"':''}><div style="color:var(--gray-500);font-size:11.5px;margin-bottom:2px">${l}</div><div style="font-weight:500">${v?_dlEsc(v):'—'}</div></div>`;
+  const sec=t=>`<div style="grid-column:1/-1;border-top:1px solid var(--gray-100);padding-top:12px;margin-top:2px"><div style="font-weight:600;font-size:12px;color:var(--gray-600);margin-bottom:2px">${t}</div></div>`;
+  document.getElementById('dv-title').textContent=(isT?'Stock Transfer Note ':'Delivery Sheet ')+(r.no||'');
+  let h=`<div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--gray-100)">
+    <div><div style="font-size:17px;font-weight:600">${_dlEsc(isT?('To: '+(r.transferTo||'—')):(r.custName||'—'))}</div>
+    <div style="font-size:12px;color:var(--gray-500);margin-top:2px">${_dlEsc(r.date||'—')} · ${isT?'🔁 Stock Transfer':'🚚 Delivery'}</div></div>
+    <div style="text-align:right"><div style="font-size:20px;font-weight:700;color:var(--green)">${r.selling?'NPR '+_dlEsc(r.selling):'—'}</div><div style="font-size:11.5px;color:var(--gray-500)">Selling Price</div></div></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px 16px;font-size:13px">`;
+  if(isT){
+    h+=sec('🔁 TRANSFER')+row('To Showroom',r.transferTo)+row('Transferred By',r.transferBy)+row('Received By',r.receivedBy)+row('Remarks',r.remarks);
+  }else{
+    h+=sec('👤 CUSTOMER')+row('Phone',r.phone)+row('District',r.district)+row('Municipality',r.muni)+row('Address',r.addr);
+  }
+  h+=sec('🏍️ BIKE')+row('Model',r.model)+row('Colour',r.colour)+row('Engine No.',r.engineno)+row('Chassis No.',r.chassisno)+row('Registration No.',r.regNo)+row('Model Year',r.modelYear);
+  if(!isT){
+    h+=sec('💰 PRICE & PAYMENT')+row('MRP (Rs.)',r.mrp)+row('Discount (Rs.)',r.discount)+row('Selling Price (Rs.)',r.selling)+row('Mode of Purchase',r.purchaseMode)
+      +row('Selling Price in Words',r.sellingWords,true)
+      +row('Insurance',(r.insTypes||'')+(r.insName?' — '+r.insName:''))+row('Namsari',r.namsari?'✅ Yes':'No');
+  }
+  h+='</div>';
+  document.getElementById('dv-body').innerHTML=h;
+  openModal('delivery-view');
+}
+
+async function deleteDeliveryEntry(i){
+  if(!isAdmin()){toast('❌ Delete: Admin le matra garna milne cha');return;}
+  const r=deliveryLedger[i];if(!r)return;
+  if(!confirm((r.no||'')+' — '+(r.custName||r.transferTo||'')+' delete garne?\n(Stock / Sales record ma asar pardaina)'))return;
+  if(String(deliveryLedgerEditId)===String(r.id)){deliveryLedgerEditId=null;updateDeliveryEditBadge();}
+  deliveryLedger.splice(i,1);
+  await dbSet('dah2-delivery-ledger',deliveryLedger);
+  renderDeliveryLedger();toast('Deleted ✓');
+}
+
+function _dlFiltered(){
+  const q=((document.getElementById('dl-search')||{}).value||'').toLowerCase().trim();
+  const t=(document.getElementById('dl-type-filter')||{}).value||'';
+  let list=deliveryLedger.map((r,origIdx)=>({...r,origIdx})).filter(r=>{
+    if(t&&r.mode!==t)return false;
+    if(!q)return true;
+    return [r.no,r.custName,r.phone,r.model,r.colour,r.engineno,r.chassisno,r.regNo,r.transferTo,r.addr,r.muni,r.district].join(' ').toLowerCase().includes(q);
+  });
+  list.sort((a,b)=>{
+    const c=dateSortKey(b.date).localeCompare(dateSortKey(a.date));
+    return c!==0?c:String(b.savedAt||'').localeCompare(String(a.savedAt||''));
+  });
+  return list;
+}
+
+function renderDeliveryLedger(){
+  const tbody=document.getElementById('dl-body');
+  if(!tbody)return;
+  const list=_dlFiltered();
+  const total=list.filter(r=>r.mode!=='transfer').reduce((s,r)=>s+_dlNum(r.selling),0);
+  const cnt=document.getElementById('dl-count');
+  if(cnt)cnt.textContent=list.length+' entries'+(total?' · Total Rs. '+_dlFmt(total):'');
+  if(!list.length){tbody.innerHTML='<tr><td colspan="17" style="text-align:center;padding:2rem;color:#9ca3af">Delivery ledger ma kei save bhayeko chaina — Delivery Sheet ma "📒 Save to Ledger" thichnus</td></tr>';return;}
+  const ic={
+    view:'<svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>',
+    edit:'<svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>',
+    print:'<svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>',
+    del:'<svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>'
+  };
+  tbody.innerHTML=list.map((r,i)=>{
+    const isT=r.mode==='transfer';
+    const typePill=isT?'<span style="background:#e3edff;color:#0b2d5c;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600">🔁 Transfer</span>':'<span style="background:#e3f6ea;color:#1a7a4a;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600">🚚 Delivery</span>';
+    const ins=[r.insTypes,r.namsari?'Namsari':''].filter(Boolean).join(' + ');
+    return `<tr>
+    <td style="text-align:center;font-weight:600;color:var(--gray-400)">${i+1}</td>
+    <td class="mono">${_dlEsc(r.no||'—')}</td>
+    <td>${_dlEsc(r.date||'—')}</td>
+    <td>${typePill}</td>
+    <td><strong>${_dlEsc(isT?(r.transferTo||'—'):(r.custName||'—'))}</strong>${isT?'':`<br><span style="font-size:11px;color:var(--gray-400)">${_dlEsc([r.addr,r.muni,r.district].filter(Boolean).join(', '))}</span>`}</td>
+    <td>${_dlEsc(r.phone||'—')}</td>
+    <td>${_dlEsc(r.model||'—')}</td>
+    <td>${_dlEsc(r.colour||'—')}</td>
+    <td class="mono">${_dlEsc(r.engineno||'—')}</td>
+    <td class="mono">${_dlEsc(r.chassisno||'—')}</td>
+    <td class="mono">${_dlEsc(r.regNo||'—')}</td>
+    <td style="text-align:right">${isT?'—':_dlFmt(_dlNum(r.mrp))}</td>
+    <td style="text-align:right">${isT?'—':_dlFmt(_dlNum(r.discount))}</td>
+    <td style="text-align:right;font-weight:600;color:var(--green)">${isT?'—':_dlFmt(_dlNum(r.selling))}</td>
+    <td>${_dlEsc(isT?'—':(r.purchaseMode||'—'))}</td>
+    <td>${_dlEsc(isT?'—':(ins||'—'))}</td>
+    <td><div class="action-btns">
+      <button class="icon-btn icon-btn-edit" title="View" onclick="viewDeliveryDetail(${r.origIdx})">${ic.view}</button>
+      <button class="icon-btn icon-btn-edit" title="Edit (sheet ma kholne)" onclick="loadDeliveryToForm(${r.origIdx})">${ic.edit}</button>
+      <button class="icon-btn icon-btn-edit" title="Print (A4 one page)" onclick="printDeliveryFromLedger(${r.origIdx})">${ic.print}</button>
+      <button class="icon-btn icon-btn-del" title="Delete" onclick="deleteDeliveryEntry(${r.origIdx})">${ic.del}</button>
+    </div></td>
+  </tr>`;}).join('');
+}
+
+function exportDeliveryLedgerExcel(){
+  const list=_dlFiltered();
+  const headers=['S.N.','No.','Date','Type','Customer','Phone','District','Municipality','Address','Bike Model','Colour','Engine No.','Chassis No.','Reg. No.','Model Year','MRP','Discount','Selling Price','Selling Price in Words','Mode of Purchase','Insurance','Insurance Co.','Namsari','Transfer To','Transferred By','Received By','Remarks'];
+  const rows=list.map((r,i)=>[i+1,r.no,r.date,r.mode==='transfer'?'Transfer':'Delivery',r.custName,r.phone,r.district,r.muni,r.addr,r.model,r.colour,r.engineno,r.chassisno,r.regNo,r.modelYear,_dlNum(r.mrp)||'',_dlNum(r.discount)||'',_dlNum(r.selling)||'',r.sellingWords,r.purchaseMode,r.insTypes,r.insName,r.namsari?'Yes':'',r.transferTo,r.transferBy,r.receivedBy,r.remarks]);
+  const ws=XLSX.utils.aoa_to_sheet([headers,...rows]);
+  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Delivery Ledger');
+  XLSX.writeFile(wb,'delivery-ledger.xlsx');toast('Excel downloaded ✓');
+}
+
+function printDeliveryLedger(){
+  const list=_dlFiltered();
+  const total=list.filter(r=>r.mode!=='transfer').reduce((s,r)=>s+_dlNum(r.selling),0);
+  const meta=document.getElementById('dl-print-meta');
+  if(meta)meta.textContent='Total: '+list.length+' entries'+(total?' | Selling Total: Rs. '+_dlFmt(total):'')+' | Printed: '+new Date().toLocaleString();
+  const td='border:1px solid #bbb;padding:3px 5px';
+  document.getElementById('dl-print-body').innerHTML=list.map((r,i)=>{
+    const isT=r.mode==='transfer';
+    return `<tr>
+      <td style="${td}">${i+1}</td><td style="${td}">${_dlEsc(r.no||'')}</td><td style="${td}">${_dlEsc(r.date||'')}</td>
+      <td style="${td}">${_dlEsc(isT?('Transfer → '+(r.transferTo||'')):(r.custName||''))}</td>
+      <td style="${td}">${_dlEsc(r.phone||'')}</td><td style="${td}">${_dlEsc(r.model||'')}</td>
+      <td style="${td}">${_dlEsc(r.chassisno||'')}</td><td style="${td}">${_dlEsc(r.engineno||'')}</td>
+      <td style="${td};text-align:right">${isT?'':_dlFmt(_dlNum(r.selling))}</td><td style="${td}">${_dlEsc(isT?'':(r.purchaseMode||''))}</td></tr>`;
+  }).join('');
+  const area=document.getElementById('dl-print-area');
+  area.style.display='block';
+  window.print();
+  setTimeout(()=>{area.style.display='none';},1000);
+}
+
 function saveDeliveryPDF(){
   const custName=document.getElementById('d-cust-name').value.trim();
   const model=document.getElementById('d-bike-model').value.trim();
@@ -6469,7 +6880,7 @@ function saveQuotationPDF(){
 //  EXPORT / IMPORT
 // ══════════════════════════════════════════════
 function exportJSON(){
-  const d={stock,sales,bookings,receipts,vouchers,valuationSheets,purchases,payables,transfers,exportedAt:new Date().toISOString()};
+  const d={stock,sales,bookings,receipts,vouchers,valuationSheets,deliveryLedger,purchases,payables,transfers,exportedAt:new Date().toISOString()};
   const blob=new Blob([JSON.stringify(d,null,2)],{type:'application/json'});
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='divya-auto-hub-backup-'+today()+'.json';a.click();
   toast('JSON backup downloaded ✓');
@@ -6490,6 +6901,7 @@ async function handleJSONImport(e){
       if(d.receipts){receipts=d.receipts;await dbSet('dah2-receipts',receipts);}
       if(d.vouchers){vouchers=d.vouchers;await dbSet('dah2-vouchers',vouchers);}
       if(d.valuationSheets){valuationSheets=d.valuationSheets;await dbSet('dah2-valuation-sheets',valuationSheets);}
+      if(d.deliveryLedger){deliveryLedger=d.deliveryLedger;await dbSet('dah2-delivery-ledger',deliveryLedger);}
       if(d.purchases){purchases=d.purchases;savePurchases();}
       if(d.payables){payables=d.payables;await dbSet('dah2-payable-ledger',payables);}
       if(d.transfers){transfers=d.transfers;await dbSet('dah2-transfers',transfers);}
@@ -6538,7 +6950,7 @@ async function silentBackup(){
   if(!url)return;
   try{
     loadPurchases();
-    const payload={stock,sales,bookings,receipts,vouchers,valuationSheets,purchases,transfers,backedUpAt:new Date().toISOString()};
+    const payload={stock,sales,bookings,receipts,vouchers,valuationSheets,deliveryLedger,purchases,transfers,backedUpAt:new Date().toISOString()};
     const res=await fetch(url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(payload)});
     const result=await res.json();
     if(result.status==='ok'){
@@ -6705,7 +7117,7 @@ async function backupToGoogleSheet(){
   const orig=btn.textContent;btn.textContent='⏳ Backing up...';btn.disabled=true;
   try{
     loadPurchases();
-    const payload={stock,sales,bookings,receipts,vouchers,valuationSheets,purchases,transfers,backedUpAt:new Date().toISOString()};
+    const payload={stock,sales,bookings,receipts,vouchers,valuationSheets,deliveryLedger,purchases,transfers,backedUpAt:new Date().toISOString()};
     const res=await fetch(url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(payload)});
     const result=await res.json();
     if(result.status==='ok'){
@@ -6739,6 +7151,7 @@ async function restoreFromGoogleSheet(){
     if(data.receipts) receipts=data.receipts;
     if(data.vouchers) vouchers=data.vouchers;
     if(data.valuationSheets) valuationSheets=data.valuationSheets;
+    if(data.deliveryLedger) deliveryLedger=data.deliveryLedger;
     if(data.purchases){ purchases=data.purchases; savePurchases(); }
     if(data.transfers) transfers=data.transfers;
     suppressAutoBackup=true;
@@ -6748,6 +7161,7 @@ async function restoreFromGoogleSheet(){
     if(data.receipts) await dbSet('dah2-receipts',receipts);
     if(data.vouchers) await dbSet('dah2-vouchers',vouchers);
     if(data.valuationSheets) await dbSet('dah2-valuation-sheets',valuationSheets);
+    if(data.deliveryLedger) await dbSet('dah2-delivery-ledger',deliveryLedger);
     if(data.transfers) await dbSet('dah2-transfers',transfers);
     suppressAutoBackup=false;
     populateModelSelects();render();renderReceiptLedger();renderVoucherLedger();renderValuationLedger();closeModal('dataio');
