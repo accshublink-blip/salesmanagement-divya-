@@ -9897,14 +9897,22 @@ async function importPurchaseXLSX(e){
     loadPurchases();
 
     // Helper: find existing entry index by invoice/chassis/engine
-    function findDupeIdx(invoiceno, chassis, engine){
+    // FIX: Same invoice ma dherai bike hunasakchha, so Invoice No. le matra duplicate hudaina.
+    //  - Chassis/Engine diyeko bhae: tei match bhayo bhane matra duplicate.
+    //  - Serial no. nadiyeko bhae: Invoice + Model + Colour milyo ra existing row ma pani serial chaina bhane matra duplicate.
+    function findDupeIdx(invoiceno, chassis, engine, model, colour){
+      const hasSerial = !!(chassis || engine);
       return purchases.findIndex(p=>{
         const pInv=(p.invoiceno||'').toUpperCase();
         const pCh =(p.chassis||'').toUpperCase();
         const pEng=(p.engine||'').toUpperCase();
-        if(invoiceno && pInv && pInv===invoiceno) return true;
-        if(chassis   && pCh  && pCh===chassis)    return true;
-        if(engine    && pEng && pEng===engine)     return true;
+        if(hasSerial){
+          if(chassis && pCh  && pCh===chassis)  return true;
+          if(engine  && pEng && pEng===engine)  return true;
+          return false;
+        }
+        if(invoiceno && pInv && pInv===invoiceno && !pCh && !pEng
+           && (p.model||'')===model && (p.colour||'').toUpperCase()===(colour||'').toUpperCase()) return true;
         return false;
       });
     }
@@ -9925,7 +9933,8 @@ async function importPurchaseXLSX(e){
       const engine   =String(r['Engine No.'] ||r['Engine No'] ||r['engine']   ||'').trim().toUpperCase();
 
       // Skip in-file duplicates
-      const fileKey=invoiceno+'|'+chassis+'|'+engine;
+      // FIX: serial nabhayeko rows ko lagi model+colour pani key ma (same invoice ma alag bike skip nahos)
+      const fileKey=invoiceno+'|'+chassis+'|'+engine+((chassis||engine)?'':'|'+model+'|'+String(r['Colour']||r['colour']||'').trim().toUpperCase());
       if(fileKey!=='||' && inFileKeys.has(fileKey)){skipped++;return;}
       inFileKeys.add(fileKey);
 
@@ -9953,7 +9962,7 @@ async function importPurchaseXLSX(e){
       };
 
       // Auto-replace existing duplicate
-      const dupeIdx=findDupeIdx(invoiceno, chassis, engine);
+      const dupeIdx=findDupeIdx(invoiceno, chassis, engine, model, entry.colour);
       if(dupeIdx!==-1){
         entry.id = purchases[dupeIdx].id; // preserve original id
         const oldEntry = purchases[dupeIdx];
